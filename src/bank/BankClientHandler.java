@@ -1,7 +1,5 @@
 package bank;
-
 import shared.Message;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -38,6 +36,7 @@ public class BankClientHandler implements Runnable {
 
                 switch (parts[0]) {
                     case "REGISTER_AUCTION_HOUSE" -> handleHouseRegistration(parts, out);
+                    case "REGISTER_AGENT" -> handleAgentRegistration(parts, out);
                     // TODO: handle agents, funds, etc.
                     default -> out.println("ERROR Unknown command");
                 }
@@ -47,8 +46,25 @@ public class BankClientHandler implements Runnable {
         }
     }
 
-    private int handleAgentRegistration(String[] parts, PrintWriter out) {
-        return 0;
+    private void handleAgentRegistration(String[] parts, PrintWriter out) {
+        if (parts.length != 3) {
+            out.println("ERROR Invalid agent registration format");
+            return;
+        }
+
+        String name = parts[1];
+        int initialBalance;
+
+        try {
+            initialBalance = Integer.parseInt(parts[2]);
+        } catch (NumberFormatException e) {
+            out.println("ERROR Invalid balance amount");
+            return;
+        }
+
+        int id = idGenerator.getAndIncrement();
+        accounts.put(id, new Account(id, name, true, initialBalance));
+        out.println("OK " + id);
     }
 
     private void handleHouseRegistration(String[] parts, PrintWriter out) {

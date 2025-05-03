@@ -1,52 +1,67 @@
 package auctionhouse;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ItemManager {
 
-    private final Map<Integer, AuctionItem> items;
+    private final Map<Integer, AuctionItem> activeItems;
+    private final Queue<AuctionItem> pendingItems;
     private final AtomicInteger nextItemId;
 
     public ItemManager() {
-        this.items = new ConcurrentHashMap<>();
+        this.activeItems = new ConcurrentHashMap<>();
+        this.pendingItems = new ConcurrentLinkedQueue<>();
         this.nextItemId = new AtomicInteger(1);
-
-        // TODO: initialize with test items or load from config later
     }
 
-    public int addItem(String description, int minimumBid) {
-        int id = nextItemId.getAndIncrement();
-        AuctionItem item = new AuctionItem(id, description, minimumBid);
-        items.put(id, item);
-        return id;
+    public void loadItemsFromResource(String resourceName) throws IOException {
+        try (Scanner scanner = new Scanner(
+                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceName)))) {
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
+
+                String[] parts = line.split(",", 2);
+                if (parts.length == 2) {
+                    String desc = parts[0].trim();
+                    int minBid = Integer.parseInt(parts[1].trim());
+                    AuctionItem item = new AuctionItem(nextItemId.getAndIncrement(), desc, minBid);
+                    pendingItems.add(item);
+                }
+            }
+
+            for (int i = 0; i < 3 && !pendingItems.isEmpty(); i++) {
+                AuctionItem item = pendingItems.poll();
+                activeItems.put(item.getItemId(), item);
+            }
+        }
     }
 
     public List<AuctionItem> getAvailableItems() {
-        List<AuctionItem> available = new ArrayList<>();
-        for (AuctionItem item : items.values()) {
-            if (!item.isSold()) {
-                available.add(item);
-            }
-        }
-        return available;
+        return new ArrayList<>(activeItems.values());
     }
 
     public AuctionItem getItem(int itemId) {
-        return items.get(itemId);
+        return activeItems.get(itemId);
+    }
+
+    public synchronized void markItemAsSold(int itemId) {
+        AuctionItem sold = activeItems.remove(itemId);
+        if (sold != null) {
+            sold.markAsSold();
+            if (!pendingItems.isEmpty()) {
+                AuctionItem next = pendingItems.poll();
+                activeItems.put(next.getItemId(), next);
+            }
+        }
     }
 
     public boolean hasActiveAuctions() {
-        for (AuctionItem item : items.values()) {
-            if (!item.isSold()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void startAuctionTimer(AuctionItem item) {
-        // TODO: implement delayed marking of item as sold
+        return !activeItems.isEmpty();
     }
 }

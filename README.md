@@ -1,7 +1,7 @@
 # Distributed Auction
 
 
-## The Program - Fire Simulation
+## The Program - Distributed Auction
 
 
 ### Running the Program

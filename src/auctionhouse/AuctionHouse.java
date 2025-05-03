@@ -3,6 +3,7 @@ package auctionhouse;
 import shared.BankClient;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -25,14 +26,27 @@ public class AuctionHouse {
     }
 
     public void start() {
-        // TODO: Register with bank using bankClient
         try {
             serverSocket = new ServerSocket(serverPort);
             running = true;
-            System.out.println("Auction House listening on port " + serverPort);
+
+            String localHost = InetAddress.getLocalHost().getHostAddress();
+            int localPort = serverSocket.getLocalPort();
+
+            int accountId = bankClient.registerAuctionHouse(localHost, localPort);
+
+            if (accountId < 0) {
+                System.err.println("Failed to register with bank. Aborting startup.");
+                return;
+            }
+
+            System.out.println("Auction House registered with bank. Account ID: " + accountId);
+            System.out.println("Listening for agents on port " + serverPort);
+
             listenForAgents();
+
         } catch (IOException e) {
-            System.err.println("Failed to start server: " + e.getMessage());
+            System.err.println("Failed to start auction house: " + e.getMessage());
         }
     }
 

@@ -25,8 +25,14 @@ public class SocketBankClient implements BankClient {
      */
     @Override
     public int registerAuctionHouse(String host, int port) {
-        // TODO: Implement registration messaging protocol with Bank
-        return 0;
+        String msg = Message.encode("REGISTER_AUCTION_HOUSE", host, String.valueOf(port));
+        String response = sendMessage(msg);
+
+        if (response != null && response.startsWith("OK")) {
+            return Integer.parseInt(response.split(" ")[1]);
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -78,20 +84,17 @@ public class SocketBankClient implements BankClient {
         // TODO: Send TRANSFER_FUNDS request to Bank
     }
 
-    // TODO: Talk with the group on how we want to send messages
-    /*
     private String sendMessage(String message) {
         try (
-            Socket socket = new Socket(bankHost, bankPort);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+                Socket socket = new Socket(bankHost, bankPort);
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
         ) {
             out.println(message);
             return in.readLine();
         } catch (IOException e) {
-            System.err.println("Communication error with bank: " + e.getMessage());
+            System.err.println("Bank communication error: " + e.getMessage());
             return null;
         }
     }
-     */
 }

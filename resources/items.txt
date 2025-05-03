@@ -1,0 +1,9 @@
+Laser Pointer,50
+Antique Vase,200
+Vintage Clock,150
+Smartphone,300
+Laptop,600
+Bluetooth Speaker,100
+Drone Camera,500
+Mechanical Keyboard,90
+Smartwatch,250

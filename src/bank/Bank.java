@@ -1,5 +1,4 @@
 package bank;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BankServer {
+public class Bank {
     private static final int PORT = 44444;
     private static final Map<Integer, Account> accounts = new ConcurrentHashMap<>();
     private static final List<String> auctionHouseAddresses = Collections.synchronizedList(new ArrayList<>());

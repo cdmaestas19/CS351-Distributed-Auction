@@ -37,7 +37,9 @@ public class BankClientHandler implements Runnable {
                 switch (parts[0]) {
                     case "REGISTER_AUCTION_HOUSE" -> handleHouseRegistration(parts, out);
                     case "REGISTER_AGENT" -> handleAgentRegistration(parts, out);
-                    // TODO: handle agents, funds, etc.
+                    case "BLOCK_FUNDS" -> blockFunds();
+                    case "UNBLOCK_FUNDS" -> unblockFunds();
+                    case "TRANSFER_FUNDS" -> transferFunds();
                     default -> out.println("ERROR Unknown command");
                 }
             }
@@ -82,5 +84,19 @@ public class BankClientHandler implements Runnable {
         auctionHouses.add(address);
 
         out.println("OK " + id);
+    }
+
+
+    /**
+     * Yes if they have enough funds
+     */
+    private void blockFunds () {
+    }
+
+    private void unblockFunds () {
+    }
+
+    private void transferFunds () {
+
     }
 }

@@ -44,8 +44,13 @@ public class SocketBankClient implements BankClient {
      */
     @Override
     public int registerAgent(String name, int initialBalance) {
-        // TODO: Implement registration messaging protocol with Bank
-        return 0;
+        String msg = Message.encode("REGISTER_AGENT", name, String.valueOf(initialBalance));
+        String response = sendMessage(msg);
+        if (response != null && response.startsWith("OK")) {
+            return Integer.parseInt(response.split(" ")[1]);
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -57,8 +62,9 @@ public class SocketBankClient implements BankClient {
      */
     @Override
     public boolean blockFunds(int agentId, int amount) {
-        // TODO: Send BLOCK_FUNDS request to Bank and parse response
-        return false;
+        String msg = Message.encode("BLOCK_FUNDS", String.valueOf(agentId), String.valueOf(amount));
+        String response = sendMessage(msg);
+        return response != null && response.startsWith("OK");
     }
 
     /**
@@ -69,7 +75,8 @@ public class SocketBankClient implements BankClient {
      */
     @Override
     public void unblockFunds(int agentId, int amount) {
-        // TODO: Send UNBLOCK_FUNDS request to Bank
+        String msg = Message.encode("UNBLOCK_FUNDS", String.valueOf(agentId), String.valueOf(amount));
+        sendMessage(msg);
     }
 
     /**
@@ -81,7 +88,9 @@ public class SocketBankClient implements BankClient {
      */
     @Override
     public void transferFunds(int fromAgentId, int toAuctionHouseId, int amount) {
-        // TODO: Send TRANSFER_FUNDS request to Bank
+        String msg = Message.encode("TRANSFER_FUNDS", String.valueOf(fromAgentId),
+                String.valueOf(toAuctionHouseId), String.valueOf(amount));
+        sendMessage(msg);
     }
 
     private String sendMessage(String message) {

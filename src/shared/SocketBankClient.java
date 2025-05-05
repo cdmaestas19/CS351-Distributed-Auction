@@ -7,7 +7,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
- * Handles communication with the bank server over TCP sockets.
+ * Handles communication with the bank over TCP sockets.
  * Implements all bank operations for auction houses and agents.
  * <p>
  * Part of CS 351 Project 5 – Distributed Auction
@@ -22,10 +22,10 @@ public class SocketBankClient implements BankClient {
     private final int bankPort;
 
     /**
-     * Constructs a new SocketBankClient to communicate with the bank server.
+     * Constructs a new SocketBankClient to communicate with the bank.
      *
-     * @param bankHost the bank server's hostname or IP address
-     * @param bankPort the bank server's listening port
+     * @param bankHost the bank's hostname or IP address
+     * @param bankPort the bank's listening port
      */
     public SocketBankClient(String bankHost, int bankPort) {
         this.bankHost = bankHost;

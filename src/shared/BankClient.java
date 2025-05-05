@@ -1,5 +1,15 @@
 package shared;
 
+/**
+ * Interface for communicating with the bank
+ * Defines operations for registering accounts, managing funds, and initiating transfers.
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction.
+ *
+ * @author Dustin Ferguson
+ * @author Christian Maestas
+ * @author Isaac Tapia
+ */
 public interface BankClient {
     /**
      * Registers an auction house with the bank.

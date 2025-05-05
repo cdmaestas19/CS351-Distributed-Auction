@@ -43,14 +43,13 @@ public class AuctionItem {
         return sold;
     }
 
-    public synchronized boolean placeBid(int agentId, int bidAmount) {
+    public synchronized void placeBid(int agentId, int bidAmount) {
         // TODO: add real bid validation logic later
         if (sold || bidAmount <= currentBid || bidAmount < minimumBid) {
-            return false;
+            return;
         }
         currentBid = bidAmount;
         currentBidderId = agentId;
-        return true;
     }
 
     public synchronized void markAsSold() {

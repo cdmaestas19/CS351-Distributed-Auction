@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,6 +19,8 @@ public class AuctionHouse {
 
     private final BankClient bankClient;
     private final ItemManager itemManager;
+
+    private final Map<Integer, AgentHandler> agentHandlers = new ConcurrentHashMap<>();
 
     public AuctionHouse(int port, BankClient bankClient, ItemManager itemManager) {
         this.serverPort = port;
@@ -54,7 +58,8 @@ public class AuctionHouse {
         while (running) {
             try {
                 Socket agentSocket = serverSocket.accept();
-                agentThreadPool.submit(new AgentHandler(agentSocket, itemManager, bankClient));
+                AgentHandler handler = new AgentHandler(agentSocket, itemManager, bankClient, this);
+                agentThreadPool.submit(handler);
             } catch (IOException e) {
                 if (running) {
                     System.err.println("Error accepting agent connection: " + e.getMessage());
@@ -62,6 +67,14 @@ public class AuctionHouse {
                 break;
             }
         }
+    }
+
+    public void registerAgent(int agentId, AgentHandler handler) {
+        agentHandlers.put(agentId, handler);
+    }
+
+    public AgentHandler getAgentHandler(int agentId) {
+        return agentHandlers.get(agentId);
     }
 
     public void shutdown() {

@@ -3,8 +3,21 @@ package auctionhouse;
 import shared.BankClient;
 import shared.SocketBankClient;
 
+/**
+ * Launches the auction house by connecting to the bank.
+ * Loads auction items from a configuration file.
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction.
+ *
+ * @author Isaac Tapia
+ */
 public class AuctionLauncher {
 
+    /**
+     * Entry point for the auction house program.
+     *
+     * @param args command-line arguments: bank host, bank port, auction port
+     */
     public static void main(String[] args) {
         if (args.length < 3) {
             System.err.println("Usage: java AuctionLauncher <bankHost> <bankPort> <auctionPort>");

@@ -1,5 +1,7 @@
 package auctionhouse;
 
+import javafx.application.Application;
+import javafx.stage.Stage;
 import shared.BankClient;
 import shared.SocketBankClient;
 
@@ -11,14 +13,14 @@ import shared.SocketBankClient;
  *
  * @author Isaac Tapia
  */
-public class AuctionLauncher {
+public class AuctionLauncher extends Application {
 
-    /**
-     * Entry point for the auction house program.
-     *
-     * @param args command-line arguments: bank host, bank port, auction port
-     */
-    public static void main(String[] args) {
+    private AuctionHouse house;
+
+    @Override
+    public void start(Stage primaryStage) {
+        String[] args = getParameters().getRaw().toArray(new String[0]);
+
         if (args.length < 3) {
             System.err.println("Usage: java AuctionLauncher <bankHost> <bankPort> <auctionPort>");
             System.exit(1);
@@ -34,12 +36,20 @@ public class AuctionLauncher {
             ItemManager itemManager = new ItemManager();
             itemManager.loadItemsFromResource("items.txt");
 
-            AuctionHouse house = new AuctionHouse(auctionPort, bankClient, itemManager);
-            house.start();
+            house = new AuctionHouse(auctionPort, bankClient, itemManager);
+
+            new Thread(() -> house.start()).start();
+
+            AuctionHouseGUI gui = new AuctionHouseGUI(house);
+            gui.show(primaryStage);
 
         } catch (Exception e) {
             System.err.println("Failed to launch auction house: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }

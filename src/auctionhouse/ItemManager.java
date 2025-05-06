@@ -18,7 +18,7 @@ public class ItemManager {
         this.nextItemId = new AtomicInteger(1);
     }
 
-    public void loadItemsFromResource(String resourceName) throws IOException {
+    public void loadItemsFromResource(String resourceName) {
         try (Scanner scanner = new Scanner(
                 Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceName)))) {
 
@@ -44,6 +44,15 @@ public class ItemManager {
 
     public List<AuctionItem> getAvailableItems() {
         return new ArrayList<>(activeItems.values());
+    }
+
+    public List<AuctionItem> getAllItems() {
+        List<AuctionItem> allItems = new ArrayList<>();
+
+        allItems.addAll(activeItems.values());
+        allItems.addAll(pendingItems);
+
+        return allItems;
     }
 
     public AuctionItem getItem(int itemId) {
@@ -95,6 +104,8 @@ public class ItemManager {
     }
 
     public boolean hasActiveAuctions() {
-        return !activeItems.isEmpty();
+        return activeItems.values().stream().anyMatch(item ->
+                !item.isSold() && item.getCurrentBidderId() != -1
+        );
     }
 }

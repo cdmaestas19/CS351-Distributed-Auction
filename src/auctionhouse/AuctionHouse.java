@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +27,7 @@ public class AuctionHouse {
     private ServerSocket serverSocket;
     private final ExecutorService agentThreadPool;
     private volatile boolean running = false;
+    public int accountId;
 
     private final BankClient bankClient;
     private final ItemManager itemManager;
@@ -58,15 +61,12 @@ public class AuctionHouse {
             String localHost = InetAddress.getLocalHost().getHostAddress();
             int localPort = serverSocket.getLocalPort();
 
-            int accountId = bankClient.registerAuctionHouse(localHost, localPort);
+            accountId = bankClient.registerAuctionHouse(localHost, localPort);
 
             if (accountId < 0) {
                 System.err.println("Failed to register with bank. Aborting startup.");
                 return;
             }
-
-            System.out.println("Auction House registered with bank. Account ID: " + accountId);
-            System.out.println("Listening for agents on port " + serverPort);
 
             listenForAgents();
 
@@ -82,7 +82,8 @@ public class AuctionHouse {
         while (running) {
             try {
                 Socket agentSocket = serverSocket.accept();
-                AgentHandler handler = new AgentHandler(agentSocket, itemManager, bankClient, this);
+                AgentHandler handler = new AgentHandler(agentSocket, itemManager,
+                        bankClient, this);
                 agentThreadPool.submit(handler);
             } catch (IOException e) {
                 if (running) {
@@ -91,6 +92,13 @@ public class AuctionHouse {
                 break;
             }
         }
+    }
+
+    /**
+     * Gracefully shuts down the auction house.
+     */
+    public void shutdown() {
+        // TODO: Deregister from bank, close sockets, clean shutdown
     }
 
     /**
@@ -115,9 +123,48 @@ public class AuctionHouse {
     }
 
     /**
-     * Gracefully shuts down the auction house.
+     * Returns a list of all currently connected agent IDs.
+     *
+     * @return list of agent IDs
      */
-    public void shutdown() {
-        // TODO: Deregister from bank, close sockets, clean shutdown
+    public List<Integer> getAgentIds() {
+        return new ArrayList<>(agentHandlers.keySet());
+    }
+
+    /**
+     * Returns the port number on which the auction house server is listening.
+     *
+     * @return server port
+     */
+    public int getPort() {
+        return serverPort;
+    }
+
+    /**
+     * Returns the unique account ID assigned by the bank to this auction house.
+     *
+     * @return bank account ID
+     */
+    public int getAccountId() {
+        return accountId;
+    }
+
+    /**
+     * Returns the item manager responsible for tracking active and pending auction items.
+     *
+     * @return the item manager instance
+     */
+    public ItemManager getItemManager() {
+        return itemManager;
+    }
+
+    /**
+     * Determines whether there are any active auctions in progress.
+     * An auction is considered active if it has been listed and has received a bid.
+     *
+     * @return true if at least one auction is active, false otherwise
+     */
+    public boolean hasActiveAuctions() {
+        return itemManager.hasActiveAuctions();
     }
 }

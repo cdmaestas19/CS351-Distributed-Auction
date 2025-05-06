@@ -6,11 +6,27 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+/**
+ * Handles communication with the bank over TCP sockets.
+ * Implements all bank operations for auction houses and agents.
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction
+ *
+ * @author Dustin Ferguson
+ * @author Christian Maestas
+ * @author Isaac Tapia
+ */
 public class SocketBankClient implements BankClient {
 
     private final String bankHost;
     private final int bankPort;
 
+    /**
+     * Constructs a new SocketBankClient to communicate with the bank.
+     *
+     * @param bankHost the bank's hostname or IP address
+     * @param bankPort the bank's listening port
+     */
     public SocketBankClient(String bankHost, int bankPort) {
         this.bankHost = bankHost;
         this.bankPort = bankPort;
@@ -93,6 +109,13 @@ public class SocketBankClient implements BankClient {
         sendMessage(msg);
     }
 
+    /**
+     * Sends a single-line message to the bank and returns the response.
+     * Opens a socket to the bank host/port, sends the message, and reads one reply.
+     *
+     * @param message the message to send
+     * @return the bank's response, or null if an I/O error occurred
+     */
     private String sendMessage(String message) {
         try (
                 Socket socket = new Socket(bankHost, bankPort);

@@ -2,15 +2,15 @@ package auctionhouse;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ItemManager {
-
     private final Map<Integer, AuctionItem> activeItems;
     private final Queue<AuctionItem> pendingItems;
     private final AtomicInteger nextItemId;
+    private final ScheduledExecutorService auctionTimerService = Executors.newScheduledThreadPool(4);
+    private final Map<Integer, ScheduledFuture<?>> timers = new ConcurrentHashMap<>();
 
     public ItemManager() {
         this.activeItems = new ConcurrentHashMap<>();
@@ -18,7 +18,7 @@ public class ItemManager {
         this.nextItemId = new AtomicInteger(1);
     }
 
-    public void loadItemsFromResource(String resourceName) throws IOException {
+    public void loadItemsFromResource(String resourceName) {
         try (Scanner scanner = new Scanner(
                 Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceName)))) {
 
@@ -46,9 +46,51 @@ public class ItemManager {
         return new ArrayList<>(activeItems.values());
     }
 
+    public List<AuctionItem> getAllItems() {
+        List<AuctionItem> allItems = new ArrayList<>();
+
+        allItems.addAll(activeItems.values());
+        allItems.addAll(pendingItems);
+
+        return allItems;
+    }
+
     public AuctionItem getItem(int itemId) {
         return activeItems.get(itemId);
     }
+
+    public void startAuctionTimer(AuctionItem item, AuctionHouse house) {
+        int itemId = item.getItemId();
+
+        ScheduledFuture<?> existing = timers.remove(itemId);
+        if (existing != null && !existing.isDone()) {
+            existing.cancel(false);
+        }
+
+        ScheduledFuture<?> future = auctionTimerService.schedule(() -> {
+            synchronized (item) {
+                if (item.isSold()) return;
+
+                int winnerId = item.getCurrentBidderId();
+                int amount = item.getCurrentBid();
+                if (winnerId == -1) return;
+
+                item.markAsSold();
+                markItemAsSold(itemId);
+
+                AgentHandler handler = house.getAgentHandler(winnerId);
+                if (handler != null) {
+                    handler.sendWinnerNotification(itemId);
+                }
+
+                System.out.printf("Auction ended: item %d sold to agent %d for %d\n",
+                        itemId, winnerId, amount);
+            }
+        }, 30, TimeUnit.SECONDS);
+
+        timers.put(itemId, future);
+    }
+
 
     public synchronized void markItemAsSold(int itemId) {
         AuctionItem sold = activeItems.remove(itemId);
@@ -62,6 +104,8 @@ public class ItemManager {
     }
 
     public boolean hasActiveAuctions() {
-        return !activeItems.isEmpty();
+        return activeItems.values().stream().anyMatch(item ->
+                !item.isSold() && item.getCurrentBidderId() != -1
+        );
     }
 }

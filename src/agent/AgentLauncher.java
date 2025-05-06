@@ -40,7 +40,7 @@ public class AgentLauncher {
             System.out.println("Registered successfully. Your account ID is: " + agentId);
         
             // TODO: Turn GuiTesting stuff off:
-            Agent agent = new Agent(agentName, 123);
+            agent = new Agent(agentName, 123);
         
             DashboardLauncher.launchGUI(agent);
             

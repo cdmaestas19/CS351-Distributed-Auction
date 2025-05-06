@@ -1,0 +1,20 @@
+package agent;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+
+public class DashboardLauncher extends Application {
+    
+    private static Agent agent;
+    
+    public static void launchGUI(Agent inputAgent) {
+        agent = inputAgent;
+        Application.launch(DashboardLauncher.class);
+    }
+    
+    @Override
+    public void start(Stage primaryStage) {
+        DashboardGUI gui = new DashboardGUI(agent);
+        gui.show(primaryStage);
+    }
+}

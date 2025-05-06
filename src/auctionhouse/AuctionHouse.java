@@ -11,7 +11,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Coordinates agent connections, bidding logic, and communication with the bank.
+ * Manages item listings, agent threads, and auction lifecycle.
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction.
+ *
+ * @author Isaac Tapia
+ */
 public class AuctionHouse {
+
     private final int serverPort;
     private ServerSocket serverSocket;
     private final ExecutorService agentThreadPool;
@@ -22,6 +31,14 @@ public class AuctionHouse {
 
     private final Map<Integer, AgentHandler> agentHandlers = new ConcurrentHashMap<>();
 
+    /**
+     * Constructs an AuctionHouse that manages agents, items, and bank interaction.
+     * Prepares to accept agent connections and coordinate auction activity.
+     *
+     * @param port        the port to listen on for incoming agent connections
+     * @param bankClient  the client used to communicate with the bank
+     * @param itemManager the manager responsible for item storage and bidding state
+     */
     public AuctionHouse(int port, BankClient bankClient, ItemManager itemManager) {
         this.serverPort = port;
         this.bankClient = bankClient;
@@ -29,6 +46,10 @@ public class AuctionHouse {
         this.agentThreadPool = Executors.newCachedThreadPool();
     }
 
+    /**
+     * Starts the auction house: registers with the bank and begins
+     * listening for incoming agent connections.
+     */
     public void start() {
         try {
             serverSocket = new ServerSocket(serverPort);
@@ -54,6 +75,9 @@ public class AuctionHouse {
         }
     }
 
+    /**
+     * Accepts and handles incoming agent connections
+     */
     private void listenForAgents() {
         while (running) {
             try {
@@ -69,14 +93,30 @@ public class AuctionHouse {
         }
     }
 
+    /**
+     * Registers an agent by its ID and associates it with its handler.
+     * Used for later communication (e.g., outbid or winner notifications).
+     *
+     * @param agentId the unique ID of the agent
+     * @param handler the AgentHandler managing this agent's socket
+     */
     public void registerAgent(int agentId, AgentHandler handler) {
         agentHandlers.put(agentId, handler);
     }
 
+    /**
+     * Retrieves the handler associated with the given agent ID.
+     *
+     * @param agentId the ID of the agent
+     * @return the AgentHandler managing that agent, or null if not found
+     */
     public AgentHandler getAgentHandler(int agentId) {
         return agentHandlers.get(agentId);
     }
 
+    /**
+     * Gracefully shuts down the auction house.
+     */
     public void shutdown() {
         // TODO: Deregister from bank, close sockets, clean shutdown
     }

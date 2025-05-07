@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BankClientHandler implements Runnable {
     private final Socket socket;
     private final Map<Integer, Account> accounts;
-    private final List<String> auctionHouses;
+    private static final Map<Integer, String> auctionHouseAddresses = new ConcurrentHashMap<>();
     private final AtomicInteger idGenerator;
     private static final List<PrintWriter> agentWriters =
             Collections.synchronizedList(new ArrayList<>());
@@ -25,10 +25,9 @@ public class BankClientHandler implements Runnable {
 
 
     public BankClientHandler(Socket socket, Map<Integer, Account> accounts,
-                             List<String> auctionHouses, AtomicInteger idGenerator) {
+                             Map<Integer, String> auctionHouseAddresses, AtomicInteger idGenerator) {
         this.socket = socket;
         this.accounts = accounts;
-        this.auctionHouses = auctionHouses;
         this.idGenerator = idGenerator;
     }
 
@@ -55,22 +54,7 @@ public class BankClientHandler implements Runnable {
                     case "BLOCK_FUNDS" -> blockFunds(parts, out);
                     case "UNBLOCK_FUNDS" -> unblockFunds(parts, out);
                     case "TRANSFER_FUNDS" -> transferFunds(parts, out);
-                    case "REGISTER_AGENT_CHANNEL" -> {
-                        int agentId = Integer.parseInt(parts[1]);
-                        agentWriters.add(out);
-                        agentIdToWriter.put(agentId, out);
-                        System.out.printf("Registered persistent agent channel for agent ID %d\n", agentId);
-
-                        // Send existing auction houses
-                        synchronized (auctionHouses) {
-                            for (String address : auctionHouses) {
-                                String[] split = address.split(":");
-                                out.println(Message.encode("AUCTION_HOUSE", split[0], split[1]));
-                                System.out.printf("Sent existing auction house %s to agent %d (via channel)\n", address, agentId);
-                            }
-                        }
-                    }
-                    default -> out.println("ERROR Unknown command");
+                    case "REGISTER_AGENT_CHANNEL" -> handleAgentChannel(parts, out);
                 }
             }
         } catch (IOException e) {
@@ -100,40 +84,31 @@ public class BankClientHandler implements Runnable {
 
         agentWriters.add(out);
         agentIdToWriter.put(id, out);
-        synchronized (auctionHouses) {
-            for (String address : auctionHouses) {
-                String[] split = address.split(":");
-                out.println(Message.encode("AUCTION_HOUSE", split[0], split[1]));
-                System.out.printf("Sent existing auction house %s to agent %d\n", address, id);
-            }
-        }
-
     }
 
-    private void handleHouseRegistration(String[] parts, PrintWriter out) {
-        if (parts.length != 3) {
-            out.println("ERROR Invalid register format");
-            return;
-        }
-
-        String host = parts[1];
-        String port = parts[2];
-        String address = host;
-
-        int id = idGenerator.getAndIncrement();
-        accounts.put(id, new Account(id, address, false, 0));
-        auctionHouses.add(address);
-        System.out.println("Added house " + address);
-        System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
-
-        synchronized (agentWriters) {
-            for (PrintWriter writer : agentWriters) {
-                writer.println(Message.encode("AUCTION_HOUSE", host, port));
-                System.out.printf("sent message");
-            }
-        }
-//        String msg = Message.encode("AUCTION_HOUSE", host, port);
+//    private void handleHouseRegistration(String[] parts, PrintWriter out) {
+//        if (parts.length != 3) {
+//            out.println("ERROR Invalid register format");
+//            return;
+//        }
+//
+//        String host = parts[1];
+//        int port = Integer.valueOf(parts[2]);
+//        String address = host;
+//
+//        int id = idGenerator.getAndIncrement();
+//        accounts.put(id, new Account(id, address, false, 0));
+//        auctionHouseAddresses.put(host, port);
+//        System.out.println("Added house " + address);
 //        System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
+//
+////        synchronized (agentWriters) {
+////            for (PrintWriter writer : agentWriters) {
+////                writer.println(Message.encode("AUCTION_HOUSE", host, port));
+////                System.out.printf("sent message");
+////            }
+////        }
+//        String msg = Message.encode("AUCTION_HOUSE", host, port);
 //
 //        synchronized (agentWriters) {
 //            for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
@@ -145,6 +120,57 @@ public class BankClientHandler implements Runnable {
 //        }
 //
 //        out.println("OK " + id);
+//    }
+    private void handleHouseRegistration(String[] parts, PrintWriter out) {
+        if (parts.length != 3) {
+            out.println("ERROR Invalid register format");
+            return;
+        }
+
+        String host = parts[1];
+        int port = Integer.parseInt(parts[2]);
+        int id = idGenerator.getAndIncrement();
+
+        accounts.put(id, new Account(id, host, false, 0));
+        auctionHouseAddresses.put(port, host);
+        System.out.println(auctionHouseAddresses.size());
+
+        System.out.printf("Auction house registered: %s:%d\n", host, port);
+
+        String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port));
+        for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
+            int agentId = entry.getKey();
+            PrintWriter writer = entry.getValue();
+            writer.println(msg);
+            writer.flush();
+            System.out.printf("→ Notified agent ID %d of new auction house %s:%d\n", agentId, host, port);
+        }
+
+        out.println("OK " + id);
+    }
+
+    private void handleAgentChannel(String[] parts, PrintWriter out) {
+        if (parts.length != 2) {
+            out.println("ERROR Invalid REGISTER_AGENT_CHANNEL format");
+            return;
+        }
+
+        int agentId = Integer.parseInt(parts[1]);
+        agentWriters.add(out);
+        agentIdToWriter.put(agentId, out);
+        System.out.printf("Registered persistent channel for agent ID %d\n", agentId);
+
+        int counter = 1;
+        for (Map.Entry<Integer, String> entry : auctionHouseAddresses.entrySet()) {
+            System.out.println(counter);
+            String host = entry.getValue();
+            int port = entry.getKey();
+            String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port));
+            out.println(msg);
+            out.flush();
+            System.out.printf("→ Sent existing auction house %s:%d to agent %d\n", host, port, agentId);
+            counter++;
+        }
     }
 
 

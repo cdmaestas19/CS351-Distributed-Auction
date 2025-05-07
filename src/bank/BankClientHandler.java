@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BankClientHandler implements Runnable {
+    //TODO: delete any debugging wth agentIdToWriter
     private final Socket socket;
     private final Map<Integer, Account> accounts;
     private static final Map<Integer, String> auctionHouseAddresses = new ConcurrentHashMap<>();
@@ -86,41 +87,6 @@ public class BankClientHandler implements Runnable {
         agentIdToWriter.put(id, out);
     }
 
-//    private void handleHouseRegistration(String[] parts, PrintWriter out) {
-//        if (parts.length != 3) {
-//            out.println("ERROR Invalid register format");
-//            return;
-//        }
-//
-//        String host = parts[1];
-//        int port = Integer.valueOf(parts[2]);
-//        String address = host;
-//
-//        int id = idGenerator.getAndIncrement();
-//        accounts.put(id, new Account(id, address, false, 0));
-//        auctionHouseAddresses.put(host, port);
-//        System.out.println("Added house " + address);
-//        System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
-//
-////        synchronized (agentWriters) {
-////            for (PrintWriter writer : agentWriters) {
-////                writer.println(Message.encode("AUCTION_HOUSE", host, port));
-////                System.out.printf("sent message");
-////            }
-////        }
-//        String msg = Message.encode("AUCTION_HOUSE", host, port);
-//
-//        synchronized (agentWriters) {
-//            for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
-//                int agentId = entry.getKey();
-//                PrintWriter agentOut = entry.getValue();
-//                agentOut.println(msg);
-//                System.out.printf("  → Sent to agent ID %d: %s\n", agentId, msg);
-//            }
-//        }
-//
-//        out.println("OK " + id);
-//    }
     private void handleHouseRegistration(String[] parts, PrintWriter out) {
         if (parts.length != 3) {
             out.println("ERROR Invalid register format");

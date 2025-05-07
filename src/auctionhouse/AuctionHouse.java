@@ -58,7 +58,7 @@ public class AuctionHouse {
             serverSocket = new ServerSocket(serverPort);
             running = true;
 
-            String localHost = InetAddress.getLocalHost().getHostAddress();
+            String localHost = getExternalIpAddress();
             int localPort = serverSocket.getLocalPort();
 
             accountId = bankClient.registerAuctionHouse(localHost, localPort);
@@ -68,6 +68,7 @@ public class AuctionHouse {
                 return;
             }
 
+            System.out.println("Listening for agents on: " + serverPort + localPort + localHost);
             listenForAgents();
 
         } catch (IOException e) {
@@ -166,5 +167,18 @@ public class AuctionHouse {
      */
     public boolean hasActiveAuctions() {
         return itemManager.hasActiveAuctions();
+    }
+
+    private String getExternalIpAddress() throws IOException {
+        for (var netInterface : java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
+            if (netInterface.isLoopback() || !netInterface.isUp()) continue;
+
+            for (var inetAddress : java.util.Collections.list(netInterface.getInetAddresses())) {
+                if (inetAddress instanceof java.net.Inet4Address && !inetAddress.isLoopbackAddress()) {
+                    return inetAddress.getHostAddress();
+                }
+            }
+        }
+        throw new IOException("No external IP address found");
     }
 }

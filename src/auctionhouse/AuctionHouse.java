@@ -3,7 +3,6 @@ package auctionhouse;
 import shared.BankClient;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -68,7 +67,6 @@ public class AuctionHouse {
                 return;
             }
 
-            System.out.println("Listening for agents on: " + serverPort + localPort + localHost);
             listenForAgents();
 
         } catch (IOException e) {
@@ -167,6 +165,16 @@ public class AuctionHouse {
      */
     public boolean hasActiveAuctions() {
         return itemManager.hasActiveAuctions();
+    }
+
+    public void broadcastItemUpdate(AuctionItem item, int excludeAgentId) {
+        for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
+            int agentId = entry.getKey();
+            if (agentId != excludeAgentId) {
+                AgentHandler handler = entry.getValue();
+                handler.sendItemUpdate(item);
+            }
+        }
     }
 
     private String getExternalIpAddress() throws IOException {

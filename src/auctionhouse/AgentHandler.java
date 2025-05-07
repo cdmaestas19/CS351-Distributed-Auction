@@ -73,18 +73,17 @@ public class AgentHandler implements Runnable {
     }
 
     private void handleList() {
-        List<AuctionItem> items = itemManager.getAvailableItems();
-        for (AuctionItem item : items) {
+        List<AuctionItem> activeItems = itemManager.getAvailableItems();
+
+        for (AuctionItem item : activeItems) {
             out.println(Message.encode(
                     "ITEM",
                     String.valueOf(item.getItemId()),
                     "\"" + item.getDescription() + "\"",
-                    "Min:", String.valueOf(item.getMinimumBid()),
-                    "Current:", String.valueOf(item.getCurrentBid()),
-                    "Status:", item.isSold() ? "SOLD" : "OPEN"
+                    String.valueOf(item.getMinimumBid()),
+                    String.valueOf(item.getCurrentBid())
             ));
         }
-        out.println(Message.encode("END_ITEMS"));
     }
 
     private void handleBid(String[] tokens) {
@@ -131,6 +130,7 @@ public class AgentHandler implements Runnable {
 
                 item.placeBid(agentId, bidAmount);
                 itemManager.startAuctionTimer(item, auctionHouse);
+                auctionHouse.broadcastItemUpdate(item, agentId);
                 out.println(Message.encode("ACCEPTED"));
             }
 
@@ -139,7 +139,18 @@ public class AgentHandler implements Runnable {
         }
     }
 
+    public void sendItemUpdate(AuctionItem item) {
+        out.println(Message.encode(
+                "ITEM_UPDATED",
+                String.valueOf(item.getItemId()),
+                "\"" + item.getDescription() + "\"",
+                String.valueOf(item.getMinimumBid()),
+                String.valueOf(item.getCurrentBid())
+        ));
+    }
+
     public void sendOutbidNotification(int itemId) {
+        // TODO: Send new bid price
         out.println(Message.encode("OUTBID", String.valueOf(itemId)));
     }
 

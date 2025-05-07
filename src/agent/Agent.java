@@ -16,29 +16,41 @@ public class Agent implements Runnable {
 
     private final String agentName;
     private final int agentID;
-    private BankClient bankSocket;
+    private BankClient bankSocketClient;
     private int totalBalance, availableBalance;
+    private int bankPort;
+    private String bankHost;
+    private Socket bankSocket;
     private final List<Socket> auctionSockets = new ArrayList<>();
     private final List<BufferedReader> auctionInputs = new ArrayList<>();
     private ArrayList<ArrayList<AuctionItem>> AuctionItems;
     private BufferedReader bankIn;
     private PrintWriter out;
 
-    public Agent(String agentName, int agentID, BankClient bankSocket ) {
+    
+    public Agent(String bankHost, int bankPort, String agentName, int agentID,
+                 BankClient bankSocketClient) {
         this.agentName = agentName;
         this.agentID = agentID;
-        this.bankSocket = bankSocket;
+        this.bankSocketClient = bankSocketClient;
+        this.bankPort = bankPort;
+        this.bankHost = bankHost;
     }
     
-    // TODO: turn GUI testing stuff off:
-    public Agent(String agentName, int agentID) {
-        this.agentName = agentName;
-        this.agentID = agentID;
-    }
+//    // TODO: turn GUI testing stuff off:
+//    public Agent( String agentName, int agentID) {
+//        this.agentName = agentName;
+//        this.agentID = agentID;
+
+//    }
 
     @Override
     public void run() {
         try {
+            
+            bankSocket = new Socket(bankHost, bankPort);
+            bankIn = new BufferedReader(
+                            new InputStreamReader(bankSocket.getInputStream()));
             while (true) {
                 for (BufferedReader in : auctionInputs) {
                     if (in.ready()) {
@@ -106,21 +118,33 @@ public class Agent implements Runnable {
     }
 
     public void handleMessage(String message) {
-        
+        System.out.println(message);
         String[] parts = Message.decode(message);
         
         // TODO: handle incoming messages from bank/auctions
         switch (parts[0]) {
-            case "ITEM" :
+            case "AUCTION_HOUSE" : {
+                connectToAuction(parts[1], Integer.parseInt(parts[2]));
+                break;
+            }
+            case "ITEM" : {
+                System.out.println(message);
+                break;
+            }
             case "ACCEPTED" :
             case "REJECTED" :
             case "OUTBID" :
+            
+            default:
+                System.out.println("Agent.handleMessage() error!");
+                System.out.println(message);
+                break;
         }
         
         // TODO: "BID_PLACED AuctionItem Amount?"
         // TODO: "WINNER cost?" -> transferFunds, boughtItems list, update bids
         // TODO: "BALANCE totalBalance availableBalance?" -> update balance
-        // TODO: "AUCTION_HOUSE houseID host port?" -> add auctionHouse to list
+        // TODO: "AUCTION_HOUSE host port?" -> add auctionHouse to list
     }
 
     

@@ -9,7 +9,6 @@ public class AgentLauncher {
 
     public static void main(String[] args) {
 
-
         if (args.length != 2) {
             System.err.println("Usage: java AgentLauncher <bankHost> <bankPort>");
             System.exit(1);
@@ -34,17 +33,11 @@ public class AgentLauncher {
                 return;
             }
 
-            Agent agent = new Agent(agentName, agentId, bankClient);
+            Agent agent = new Agent(bankHost, bankPort, agentName, agentId,
+                    bankClient);
             Thread agentThread = new Thread(agent);
             agentThread.start();
             System.out.println("Registered successfully. Your account ID is: " + agentId);
-        
-            // TODO: Turn GuiTesting stuff off:
-            agent = new Agent(agentName, 123);
-        
-            DashboardLauncher.launchGUI(agent);
-            
-            
             
         } catch (Exception e) {
             System.err.println("Agent startup error: " + e.getMessage());

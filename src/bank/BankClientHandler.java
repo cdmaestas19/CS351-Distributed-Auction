@@ -18,15 +18,16 @@ public class BankClientHandler implements Runnable {
     //TODO: delete any debugging wth agentIdToWriter
     private final Socket socket;
     private final Map<Integer, Account> accounts;
-    private static final Map<Integer, String> auctionHouseAddresses = new ConcurrentHashMap<>();
+    private static final Map<Integer, List<String>> auctionHouseAddresses = new ConcurrentHashMap<>();
     private final AtomicInteger idGenerator;
+    private static final AtomicInteger houseNames = new AtomicInteger(1);
     private static final List<PrintWriter> agentWriters =
             Collections.synchronizedList(new ArrayList<>());
     private static final Map<Integer, PrintWriter> agentIdToWriter = new ConcurrentHashMap<>();
 
 
     public BankClientHandler(Socket socket, Map<Integer, Account> accounts,
-                             Map<Integer, String> auctionHouseAddresses, AtomicInteger idGenerator) {
+                             Map<Integer, List<String>> auctionHouseAddresses, AtomicInteger idGenerator) {
         this.socket = socket;
         this.accounts = accounts;
         this.idGenerator = idGenerator;
@@ -56,6 +57,7 @@ public class BankClientHandler implements Runnable {
                     case "UNBLOCK_FUNDS" -> unblockFunds(parts, out);
                     case "TRANSFER_FUNDS" -> transferFunds(parts, out);
                     case "REGISTER_AGENT_CHANNEL" -> handleAgentChannel(parts, out);
+                    case "BALANCE" -> handleBalance(parts, out);
                 }
             }
         } catch (IOException e) {
@@ -96,14 +98,19 @@ public class BankClientHandler implements Runnable {
         String host = parts[1];
         int port = Integer.parseInt(parts[2]);
         int id = idGenerator.getAndIncrement();
+        String name = "AuctionHouse" + houseNames.getAndIncrement();
 
-        accounts.put(id, new Account(id, host, false, 0));
-        auctionHouseAddresses.put(port, host);
+        accounts.put(id, new Account(id, name, false, 0));
+
+        auctionHouseAddresses.put(port, new ArrayList<>());
+        auctionHouseAddresses.get(port).add(host);
+        auctionHouseAddresses.get(port).add(String.valueOf(id));
         System.out.println(auctionHouseAddresses.size());
 
         System.out.printf("Auction house registered: %s:%d\n", host, port);
 
-        String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port));
+        String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port),
+                String.valueOf(id));
         for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
             int agentId = entry.getKey();
             PrintWriter writer = entry.getValue();
@@ -127,11 +134,13 @@ public class BankClientHandler implements Runnable {
         System.out.printf("Registered persistent channel for agent ID %d\n", agentId);
 
         int counter = 1;
-        for (Map.Entry<Integer, String> entry : auctionHouseAddresses.entrySet()) {
+        for (Map.Entry<Integer, List<String>> entry : auctionHouseAddresses.entrySet()) {
             System.out.println(counter);
-            String host = entry.getValue();
+            String host = entry.getValue().getFirst();
             int port = entry.getKey();
-            String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port));
+            String id = entry.getValue().getLast();
+
+            String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port), id);
             out.println(msg);
             out.flush();
             System.out.printf("→ Sent existing auction house %s:%d to agent %d\n", host, port, agentId);
@@ -195,24 +204,56 @@ public class BankClientHandler implements Runnable {
         Account from = accounts.get(fromId);
         Account to = accounts.get(toId);
 
-        if (from == null || !from.isAgent || to == null || to.isAgent) {
-            out.println("ERROR Invalid account IDs");
-            return;
-        }
+//        if (from == null || !from.isAgent || to == null || to.isAgent) {
+//            out.println("ERROR Invalid account IDs");
+//            return;
+//        }
 
         synchronized (from) {
             if (from.blockedFunds < amount) {
                 out.println("ERROR Not enough blocked funds");
                 return;
             }
-            from.blockedFunds -= amount;
+//            from.blockedFunds -= amount;
+            System.out.println("Before transfer: " + from.totalBalance);
             from.totalBalance -= amount;
+            System.out.println("Took " + amount + " from agent");
+            System.out.println("Agent total balance: " + from.totalBalance);
         }
 
         synchronized (to) {
             to.totalBalance += amount;
+            System.out.println("Added to auction account");
+            System.out.println("Auction house total balance: " + to.totalBalance);
         }
 
-        out.println("OK");
+        out.println("Transfer successful");
+    }
+
+    private void handleBalance(String[] parts, PrintWriter out) {
+        if (parts.length != 2) {
+            out.println("ERROR Invalid BALANCE format");
+            return;
+        }
+
+        int agentId;
+        try {
+            agentId = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException e) {
+            out.println("ERROR Invalid agent ID");
+            return;
+        }
+
+        Account account = accounts.get(agentId);
+        if (account == null || !account.isAgent) {
+            out.println("ERROR Agent account not found");
+            return;
+        }
+
+        int total = account.totalBalance;
+        int available = account.getAvailableBalance();
+
+        out.println(Message.encode("BALANCE", String.valueOf(total),
+                String.valueOf(available)));
     }
 }

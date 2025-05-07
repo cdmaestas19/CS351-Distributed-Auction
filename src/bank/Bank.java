@@ -16,7 +16,7 @@ public class Bank {
     private volatile boolean running = false;
 
     private final Map<Integer, Account> accounts = new ConcurrentHashMap<>();
-    private final Map<Integer, String> auctionHouseAddresses = new ConcurrentHashMap<>();
+    private final Map<Integer, List<String>> auctionHouseAddresses = new ConcurrentHashMap<>();
     private final AtomicInteger nextAccountId = new AtomicInteger(1000);
 
     public Bank(int port) {

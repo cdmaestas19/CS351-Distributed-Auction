@@ -4,10 +4,7 @@ import auctionhouse.AuctionItem;
 import shared.BankClient;
 import shared.Message;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +44,14 @@ public class Agent implements Runnable {
     @Override
     public void run() {
         try {
-            
+            // Open persistent socket to Bank
             bankSocket = new Socket(bankHost, bankPort);
-            bankIn = new BufferedReader(
-                            new InputStreamReader(bankSocket.getInputStream()));
+            bankIn = new BufferedReader(new InputStreamReader(bankSocket.getInputStream()));
+            PrintWriter bankOut = new PrintWriter(new OutputStreamWriter(bankSocket.getOutputStream()), true);
+
+            // Notify bank this is the persistent channel for live updates
+            bankOut.println(Message.encode("REGISTER_AGENT_CHANNEL", String.valueOf(agentID)));
+
             while (true) {
                 for (BufferedReader in : auctionInputs) {
                     if (in.ready()) {

@@ -3,7 +3,6 @@ package agent;
 import auctionhouse.AuctionItem;
 import shared.BankClient;
 import shared.Message;
-
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -38,20 +37,21 @@ public class Agent implements Runnable {
 //    public Agent( String agentName, int agentID) {
 //        this.agentName = agentName;
 //        this.agentID = agentID;
-
 //    }
 
     @Override
     public void run() {
         try {
+            
             // Open persistent socket to Bank
             bankSocket = new Socket(bankHost, bankPort);
-            bankIn = new BufferedReader(new InputStreamReader(bankSocket.getInputStream()));
+            BufferedReader bankIn = new BufferedReader(new InputStreamReader(bankSocket.getInputStream()));
             PrintWriter bankOut = new PrintWriter(new OutputStreamWriter(bankSocket.getOutputStream()), true);
-
+            
             // Notify bank this is the persistent channel for live updates
-            bankOut.println(Message.encode("REGISTER_AGENT_CHANNEL", String.valueOf(agentID)));
-
+            bankOut.println(Message.encode("REGISTER_AGENT_CHANNEL",
+                    String.valueOf(agentID)));
+            
             while (true) {
                 for (BufferedReader in : auctionInputs) {
                     if (in.ready()) {
@@ -84,41 +84,8 @@ public class Agent implements Runnable {
         }
     }
 
-    public void getBalances() {
-        // TODO: send request message to bank ("BALANCE_INQUIRY account#"?)
-    }
-
-    public void requestAuctionHouses() {
-        // TODO: send request message to bank ("REQUEST_AUCTIONS")
-    }
-
-    public void requestItems(Socket auctionSocket) {
-        try {
-            out = new PrintWriter(auctionSocket.getOutputStream(), true);
-            out.println("LIST");
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void bid(Socket auctionSocket, int itemID, int bidAmount) {
-        
-        String item = String.valueOf(itemID);
-        String bid = String.valueOf(bidAmount);
-        String message = Message.encode("BID", item, bid);
-        
-        try {
-            out = new PrintWriter(auctionSocket.getOutputStream(), true);
-            out.println(message);
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        
-    }
-
     public void handleMessage(String message) {
+        
         System.out.println(message);
         String[] parts = Message.decode(message);
         
@@ -156,4 +123,39 @@ public class Agent implements Runnable {
     public int getAgentID() {
         return agentID;
     }
+    
+    public void getBalances() {
+        // TODO: send request message to bank ("BALANCE_INQUIRY account#"?)
+    }
+    
+    public void requestAuctionHouses() {
+        // TODO: send request message to bank ("REQUEST_AUCTIONS")
+    }
+    
+    public void requestItems(Socket auctionSocket) {
+        try {
+            out = new PrintWriter(auctionSocket.getOutputStream(), true);
+            out.println("LIST");
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public void bid(Socket auctionSocket, int itemID, int bidAmount) {
+        
+        String item = String.valueOf(itemID);
+        String bid = String.valueOf(bidAmount);
+        String message = Message.encode("BID", item, bid);
+        
+        try {
+            out = new PrintWriter(auctionSocket.getOutputStream(), true);
+            out.println(message);
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        
+    }
+    
 }

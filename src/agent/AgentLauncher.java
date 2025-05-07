@@ -1,7 +1,14 @@
 package agent;
 
 import shared.BankClient;
+import shared.Message;
 import shared.SocketBankClient;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Scanner;
 
 public class AgentLauncher {
@@ -32,7 +39,7 @@ public class AgentLauncher {
                 System.err.println("Failed to register agent with the bank.");
                 return;
             }
-
+            
             Agent agent = new Agent(bankHost, bankPort, agentName, agentId,
                     bankClient);
             Thread agentThread = new Thread(agent);

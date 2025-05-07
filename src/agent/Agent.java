@@ -19,6 +19,7 @@ public class Agent implements Runnable {
     private Socket bankSocket;
     private final List<Socket> auctionSockets = new ArrayList<>();
     private final List<BufferedReader> auctionInputs = new ArrayList<>();
+    private List<Integer> auctionIDs = new ArrayList<>();
     private ArrayList<ArrayList<AuctionItem>> AuctionItems;
     private BufferedReader bankIn;
     private PrintWriter out;
@@ -33,11 +34,6 @@ public class Agent implements Runnable {
         this.bankHost = bankHost;
     }
     
-//    // TODO: turn GUI testing stuff off:
-//    public Agent( String agentName, int agentID) {
-//        this.agentName = agentName;
-//        this.agentID = agentID;
-//    }
 
     @Override
     public void run() {
@@ -51,6 +47,8 @@ public class Agent implements Runnable {
             // Notify bank this is the persistent channel for live updates
             bankOut.println(Message.encode("REGISTER_AGENT_CHANNEL",
                     String.valueOf(agentID)));
+            bankOut.println(Message.encode("BALANCE", Integer.toString(agentID)));
+            
             
             while (true) {
                 for (BufferedReader in : auctionInputs) {
@@ -84,7 +82,7 @@ public class Agent implements Runnable {
         }
     }
 
-    public void handleMessage(String message) {
+    public void handleMessage(String message) throws IOException {
         
         System.out.println(message);
         String[] parts = Message.decode(message);
@@ -93,16 +91,22 @@ public class Agent implements Runnable {
         switch (parts[0]) {
             case "AUCTION_HOUSE" : {
                 connectToAuction(parts[1], Integer.parseInt(parts[2]));
+                auctionIDs.add(Integer.parseInt(parts[3]));
+                System.out.println("Auction ID's:");
                 break;
             }
             case "ITEM" : {
-                System.out.println(message);
                 break;
+            }
+            case "BALANCE" :{
+                totalBalance = Integer.parseInt(parts[1]);
+                availableBalance = Integer.parseInt(parts[2]);
+                System.out.println("Total Balance = " + totalBalance);
+                System.out.println("Available Balance = " + availableBalance);
             }
             case "ACCEPTED" :
             case "REJECTED" :
             case "OUTBID" :
-            
             default:
                 System.out.println("Agent.handleMessage() error!");
                 System.out.println(message);
@@ -125,7 +129,7 @@ public class Agent implements Runnable {
     }
     
     public void getBalances() {
-        // TODO: send request message to bank ("BALANCE_INQUIRY account#"?)
+    
     }
     
     public void requestAuctionHouses() {

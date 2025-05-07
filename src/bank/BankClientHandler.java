@@ -55,6 +55,21 @@ public class BankClientHandler implements Runnable {
                     case "BLOCK_FUNDS" -> blockFunds(parts, out);
                     case "UNBLOCK_FUNDS" -> unblockFunds(parts, out);
                     case "TRANSFER_FUNDS" -> transferFunds(parts, out);
+                    case "REGISTER_AGENT_CHANNEL" -> {
+                        int agentId = Integer.parseInt(parts[1]);
+                        agentWriters.add(out);
+                        agentIdToWriter.put(agentId, out);
+                        System.out.printf("Registered persistent agent channel for agent ID %d\n", agentId);
+
+                        // Send existing auction houses
+                        synchronized (auctionHouses) {
+                            for (String address : auctionHouses) {
+                                String[] split = address.split(":");
+                                out.println(Message.encode("AUCTION_HOUSE", split[0], split[1]));
+                                System.out.printf("Sent existing auction house %s to agent %d (via channel)\n", address, agentId);
+                            }
+                        }
+                    }
                     default -> out.println("ERROR Unknown command");
                 }
             }
@@ -109,27 +124,27 @@ public class BankClientHandler implements Runnable {
         accounts.put(id, new Account(id, address, false, 0));
         auctionHouses.add(address);
         System.out.println("Added house " + address);
-//        System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
-//
-//        synchronized (agentWriters) {
-//            for (PrintWriter writer : agentWriters) {
-//                writer.println(Message.encode("AUCTION_HOUSE", host, port));
-//                System.out.printf("sent message");
-//            }
-//        }
-        String msg = Message.encode("AUCTION_HOUSE", host, port);
         System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
 
         synchronized (agentWriters) {
-            for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
-                int agentId = entry.getKey();
-                PrintWriter agentOut = entry.getValue();
-                agentOut.println(msg);
-                System.out.printf("  → Sent to agent ID %d: %s\n", agentId, msg);
+            for (PrintWriter writer : agentWriters) {
+                writer.println(Message.encode("AUCTION_HOUSE", host, port));
+                System.out.printf("sent message");
             }
         }
-
-        out.println("OK " + id);
+//        String msg = Message.encode("AUCTION_HOUSE", host, port);
+//        System.out.printf("Broadcasting new auction house %s to %d agent(s)\n", address, agentWriters.size());
+//
+//        synchronized (agentWriters) {
+//            for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
+//                int agentId = entry.getKey();
+//                PrintWriter agentOut = entry.getValue();
+//                agentOut.println(msg);
+//                System.out.printf("  → Sent to agent ID %d: %s\n", agentId, msg);
+//            }
+//        }
+//
+//        out.println("OK " + id);
     }
 
 

@@ -19,4 +19,8 @@ public class ItemInfo {
         
     }
     
+    @Override
+    public String toString() {
+        return ("Item " + itemId + ": " + description);
+    }
 }

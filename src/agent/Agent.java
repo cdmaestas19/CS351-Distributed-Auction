@@ -1,8 +1,9 @@
 package agent;
 
-import org.w3c.dom.ls.LSOutput;
 import shared.BankClient;
 import shared.Message;
+import shared.SocketAuctionClient;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class Agent implements Runnable {
     private final BankClient bankSocketClient;
     private int totalBalance, availableBalance;
     private Socket bankSocket;
-    private final List<BufferedReader> auctionInputs = new ArrayList<>();
+    private List<AuctionManager> auctionManagers = new ArrayList<>();
 
     
     public Agent(Socket bankSocket, String agentName, int agentID,
@@ -53,26 +54,11 @@ public class Agent implements Runnable {
         }
     }
 
-    public void connectToAuction(String auctionId, String host, int port) {
-        try {
-            Socket auctionSocket = new Socket(host, port);
-            AuctionManager auctionManager = new AuctionManager(auctionId,
-                    auctionSocket);
-            Thread thread = new Thread(auctionManager);
-            thread.start();
-            System.out.println("auctionId: " + auctionId);
-            System.out.println("Connected to auction house at " + host + ":" + port);
-        } catch (Exception e) {
-            System.err.println("Failed to connect to auction house: " + e.getMessage());
-        }
-    }
-
     public void handleMessage(String message) throws IOException {
         
         System.out.println(message);
         String[] parts = Message.decode(message);
         
-        // TODO: handle incoming messages from bank/auctions
         switch (parts[0]) {
             case "BALANCE" :{
                 totalBalance = Integer.parseInt(parts[1]);
@@ -80,7 +66,14 @@ public class Agent implements Runnable {
                 break;
             }
             case "AUCTION_HOUSE" : {
-                connectToAuction(parts[3], parts[1], Integer.parseInt(parts[2]));
+                SocketAuctionClient auctionClient = new SocketAuctionClient();
+                auctionClient.connect(parts[1], Integer.parseInt(parts[2]), agentID);
+                System.out.println("Connection to Auction House " + parts[3] + " successful!");
+                AuctionManager auctionManager = new AuctionManager(parts[3],
+                        auctionClient);
+                Thread thread = new Thread(auctionManager);
+                thread.start();
+                auctionManagers.add(auctionManager);
                 break;
             }
             default:

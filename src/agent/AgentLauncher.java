@@ -33,8 +33,7 @@ public class AgentLauncher {
 
             System.out.print("Enter starting account balance: ");
             int initialBalance = Integer.parseInt(scanner.nextLine());
-
-            // TODO: make this a message? Uncomment:
+            
             int agentId = bankClient.registerAgent(agentName, initialBalance);
             if (agentId < 0) {
                 System.err.println("Failed to register agent with the bank.");

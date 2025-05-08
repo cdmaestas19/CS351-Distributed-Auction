@@ -1,28 +1,31 @@
 package agent;
 
 import shared.Message;
-
+import shared.SocketAuctionClient;
 import java.io.*;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuctionManager implements Runnable {
     
     private String auctionId;
-    private Socket auctionSocket;
-    private PrintWriter out;
+    private SocketAuctionClient auctionClient;
     private BufferedReader in;
+    private List<ItemInfo> items;
     
-    public AuctionManager(String auctionId, Socket auctionSocket) {
+    public AuctionManager(String auctionId, SocketAuctionClient auctionClient) {
         this.auctionId = auctionId;
-        this.auctionSocket = auctionSocket;
+        this.auctionClient = auctionClient;
+        items = new ArrayList<>();
     }
     
     @Override
     public void run() {
         
         try {
-            in = new BufferedReader(
-                    new InputStreamReader(auctionSocket.getInputStream()));
+            parseItemsList(auctionClient.getAvailableItems());
+            in = auctionClient.getInputStream();
+            
             while (true) {
                 if (in.ready()) {
                     String line = in.readLine();
@@ -35,6 +38,21 @@ public class AuctionManager implements Runnable {
         
     }
     
+    private void parseItemsList(List<String[]> itemList) {
+        
+        for (String[] item : itemList) {
+            
+            String itemId = item[1];
+            String description = (item[2] + " " + item[3]);
+            description = description.substring(1, description.length() - 1);
+            int minBid = Integer.parseInt(item[4]);
+            int currBid = Integer.parseInt(item[5]);
+            ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description,
+                    minBid, currBid);
+            items.add(itemInfo);
+        }
+    }
+    
     public void handleMessage(String message) throws IOException {
         
         System.out.println(message);
@@ -42,36 +60,16 @@ public class AuctionManager implements Runnable {
         
         // TODO: handle incoming messages from auctions
         switch (parts[0]) {
-            case "ITEM": {
-                break;
-            }
             case "ACCEPTED":
             case "REJECTED":
             case "OUTBID":
+            case "BID_PLACED" :
+            case "WINNER" :
             default:
                 System.out.println("Agent.handleMessage() error!");
                 System.out.println(message);
                 break;
         }
-        
-        // TODO: "BID_PLACED AuctionItem Amount?"
-        // TODO: "WINNER cost?" -> transferFunds, boughtItems list, update bids
-    }
-    
-    public void bid(Socket auctionSocket, int itemID, int bidAmount) {
-        
-        String item = String.valueOf(itemID);
-        String bid = String.valueOf(bidAmount);
-        String message = Message.encode("BID", item, bid);
-        
-        try {
-            out = new PrintWriter(auctionSocket.getOutputStream(), true);
-            out.println(message);
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        
     }
     
 }

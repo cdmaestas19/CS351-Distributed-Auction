@@ -56,4 +56,8 @@ public class SocketAuctionClient implements AuctionClient {
             socket.close();
         }
     }
+    
+    public BufferedReader getInputStream(){
+        return in;
+    }
 }

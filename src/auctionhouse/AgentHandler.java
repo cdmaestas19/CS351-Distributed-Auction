@@ -84,6 +84,7 @@ public class AgentHandler implements Runnable {
                     String.valueOf(item.getCurrentBid())
             ));
         }
+        out.println(Message.encode("END_ITEMS"));
     }
 
     private void handleBid(String[] tokens) {

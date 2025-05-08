@@ -109,6 +109,8 @@ public class SocketBankClient implements BankClient {
         sendMessage(msg);
     }
 
+//    public void balance()
+    
     /**
      * Sends a single-line message to the bank and returns the response.
      * Opens a socket to the bank host/port, sends the message, and reads one reply.

@@ -26,6 +26,7 @@ public class AgentLauncher {
 
         try (Scanner scanner = new Scanner(System.in)) {
             BankClient bankClient = new SocketBankClient(bankHost, bankPort);
+            Socket bankSocket = new Socket(bankHost, bankPort);
 
             System.out.print("Enter agent name: ");
             String agentName = scanner.nextLine();
@@ -40,7 +41,7 @@ public class AgentLauncher {
                 return;
             }
             
-            Agent agent = new Agent(bankHost, bankPort, agentName, agentId,
+            Agent agent = new Agent(bankSocket, agentName, agentId,
                     bankClient);
             Thread agentThread = new Thread(agent);
             agentThread.start();

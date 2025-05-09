@@ -108,8 +108,6 @@ public class SocketBankClient implements BankClient {
                 String.valueOf(toAuctionHouseId), String.valueOf(amount));
         sendMessage(msg);
     }
-
-//    public void balance()
     
     /**
      * Sends a single-line message to the bank and returns the response.

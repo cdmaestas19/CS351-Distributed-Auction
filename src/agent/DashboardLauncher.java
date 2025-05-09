@@ -11,10 +11,18 @@ public class DashboardLauncher extends Application {
         agent = inputAgent;
         Application.launch(DashboardLauncher.class);
     }
-    
+
     @Override
     public void start(Stage primaryStage) {
         DashboardGUI gui = new DashboardGUI(agent);
+
+        agent.setOnBalanceUpdate(gui::updateBalanceLabels);
+
+        agent.setOnAuctionConnected(manager -> {
+            gui.addAuctionHouse(manager);
+            manager.setOnItemUpdate(() -> gui.refreshAuctionTable(manager.getAuctionId()));
+        });
+
         gui.show(primaryStage);
     }
 }

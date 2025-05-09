@@ -1,13 +1,7 @@
 package agent;
 
 import shared.BankClient;
-import shared.Message;
 import shared.SocketBankClient;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -45,6 +39,8 @@ public class AgentLauncher {
             Thread agentThread = new Thread(agent);
             agentThread.start();
             System.out.println("Registered successfully. Your account ID is: " + agentId);
+
+            DashboardLauncher.launchGUI(agent);
             
         } catch (Exception e) {
             System.err.println("Agent startup error: " + e.getMessage());

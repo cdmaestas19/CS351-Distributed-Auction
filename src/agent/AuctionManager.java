@@ -1,5 +1,6 @@
 package agent;
 
+import shared.BankClient;
 import shared.Message;
 import shared.SocketAuctionClient;
 import java.io.*;
@@ -12,13 +13,16 @@ public class AuctionManager implements Runnable {
     private SocketAuctionClient auctionClient;
     private BufferedReader in;
     private List<ItemInfo> items;
-    
-    public AuctionManager(String auctionId, SocketAuctionClient auctionClient) {
+    private final BankClient bankClient;
+    private Runnable onItemUpdate;
+
+    public AuctionManager(String auctionId, SocketAuctionClient auctionClient, BankClient bankClient) {
         this.auctionId = auctionId;
         this.auctionClient = auctionClient;
-        items = new ArrayList<>();
+        this.bankClient = bankClient;
+        this.items = new ArrayList<>();
     }
-    
+
     @Override
     public void run() {
         
@@ -52,24 +56,92 @@ public class AuctionManager implements Runnable {
             items.add(itemInfo);
         }
     }
-    
+
     public void handleMessage(String message) throws IOException {
-        
-        System.out.println(message);
+        System.out.println("AuctionManager received: " + message);
         String[] parts = Message.decode(message);
-        
-        // TODO: handle incoming messages from auctions
+
         switch (parts[0]) {
-            case "ACCEPTED":
-            case "REJECTED":
-            case "OUTBID":
-            case "BID_PLACED" :
-            case "WINNER" :
-            default:
-                System.out.println("Agent.handleMessage() error!");
-                System.out.println(message);
-                break;
+            case "ACCEPTED" -> {
+                System.out.println("Bid accepted.");
+                // TODO: GUI callback for success
+            }
+
+            case "REJECTED" -> {
+                System.out.println("Bid rejected: " + (parts.length > 1 ? parts[1] : "Unknown reason"));
+                // TODO: GUI callback to show rejection reason
+            }
+
+            case "OUTBID" -> {
+                String itemId = parts[1];
+                System.out.println("You were outbid on item " + itemId);
+                // TODO: Notify GUI that user has been outbid
+            }
+
+            case "WINNER" -> {
+                String itemId = parts[1];
+                for (ItemInfo item : items) {
+                    if (item.itemId.equals(itemId)) {
+                        try {
+                            int fromAgentId = auctionClient.getAgentId();
+                            int toAuctionHouseId = Integer.parseInt(auctionId);
+                            int amount = item.currBid;
+
+                            bankClient.transferFunds(fromAgentId, toAuctionHouseId, amount);
+                            System.out.printf("Transferred $%d from agent %d to auction house %d for item %s\n",
+                                    amount, fromAgentId, toAuctionHouseId, itemId);
+
+                        } catch (Exception e) {
+                            System.err.println("Failed to transfer funds: " + e.getMessage());
+                        }
+                        break;
+                    }
+                }
+            }
+
+            case "ITEM_UPDATED" -> {
+                System.out.println("item update");
+                String itemId = parts[1];
+                String description = parts[2].substring(1, parts[2].length() - 1);
+                int minBid = Integer.parseInt(parts[3]);
+                int currBid = Integer.parseInt(parts[4]);
+
+                // Find the matching item and update it
+                for (ItemInfo item : items) {
+                    if (item.itemId.equals(itemId)) {
+                        item.description = description;
+                        item.minBid = minBid;
+                        item.currBid = currBid;
+                        System.out.println("Item updated: " + item);
+                        break;
+                    }
+                }
+
+                if (onItemUpdate != null) {
+                    javafx.application.Platform.runLater(onItemUpdate);
+                }
+            }
+
+            default -> {
+                System.out.println("Unknown message: " + message);
+            }
         }
+    }
+
+    public String getAuctionId() {
+        return auctionId;
+    }
+
+    public List<ItemInfo> getItems() {
+        return items;
+    }
+
+    public SocketAuctionClient getClient() {
+        return auctionClient;
+    }
+
+    public void setOnItemUpdate(Runnable callback) {
+        this.onItemUpdate = callback;
     }
     
 }

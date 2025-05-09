@@ -1,7 +1,5 @@
 package bank;
-
 import shared.Message;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,18 +12,56 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Bank Client Handler
+ *
+ * Handles interactions between the Bank and any clients, being Agents and
+ * Auction Houses
+ *
+ * @author Christian Maestas
+ * @author Issac Tapia
+ * @author Dustin Ferguson
+ */
+
 public class BankClientHandler implements Runnable {
-    //TODO: delete any debugging wth agentIdToWriter
+    //TODO: delete any debugging wth agentIdToWriter or output comments
+    /**
+     * Socket
+     */
     private final Socket socket;
+    /**
+     * All Bank accounts
+     */
     private final Map<Integer, Account> accounts;
-    private static final Map<Integer, List<String>> auctionHouseAddresses = new ConcurrentHashMap<>();
+    /**
+     * ID generator for Bank accounts
+     */
     private final AtomicInteger idGenerator;
+    /**
+     * Auction House naming generator
+     */
     private static final AtomicInteger houseNames = new AtomicInteger(1);
+    /**
+     * Agent Print Writers
+     */
     private static final List<PrintWriter> agentWriters =
             Collections.synchronizedList(new ArrayList<>());
+    //Used for debugging
     private static final Map<Integer, PrintWriter> agentIdToWriter = new ConcurrentHashMap<>();
+    /**
+     * Auction House Addresses and names
+     */
+    private static final Map<Integer, List<String>> auctionHouseAddresses =
+            new ConcurrentHashMap<>();
 
 
+    /**
+     * BankClientHandler constructor
+     * @param socket socket
+     * @param accounts accounts
+     * @param auctionHouseAddresses auction house addresses
+     * @param idGenerator id generator
+     */
     public BankClientHandler(Socket socket, Map<Integer, Account> accounts,
                              Map<Integer, List<String>> auctionHouseAddresses, AtomicInteger idGenerator) {
         this.socket = socket;
@@ -33,6 +69,9 @@ public class BankClientHandler implements Runnable {
         this.idGenerator = idGenerator;
     }
 
+    /**
+     * Listen for messages from clients to deal with auction bids
+     */
     @Override
     public void run() {
         try (
@@ -65,6 +104,12 @@ public class BankClientHandler implements Runnable {
         }
     }
 
+    /**
+     * When Agent registers with the Bank, it provides a name and an initial
+     * balance and is given an account ID/number
+     * @param parts parts of a message
+     * @param out output stream
+     */
     private void handleAgentRegistration(String[] parts, PrintWriter out) {
         if (parts.length != 3) {
             out.println("ERROR Invalid agent registration format");
@@ -89,6 +134,12 @@ public class BankClientHandler implements Runnable {
         agentIdToWriter.put(id, out);
     }
 
+    /**
+     * When an auction house registers with the bank, it will provide its host
+     * and port information and will be given a unique account ID/number
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void handleHouseRegistration(String[] parts, PrintWriter out) {
         if (parts.length != 3) {
             out.println("ERROR Invalid register format");
@@ -122,6 +173,14 @@ public class BankClientHandler implements Runnable {
         out.println("OK " + id);
     }
 
+    /**
+     * Creates a persistent channel of communication between the Agent and
+     * Bank to ensure messages are properly passed.
+     * When the channel is created, the Bank will send the Agent a list of
+     * all open Auction Houses
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void handleAgentChannel(String[] parts, PrintWriter out) {
         if (parts.length != 2) {
             out.println("ERROR Invalid REGISTER_AGENT_CHANNEL format");
@@ -149,6 +208,11 @@ public class BankClientHandler implements Runnable {
     }
 
 
+    /**
+     * Block funds
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void blockFunds(String[] parts, PrintWriter out) {
         if (parts.length != 3) {
             out.println("ERROR Invalid BLOCK_FUNDS format");
@@ -173,6 +237,11 @@ public class BankClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Unblock funds
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void unblockFunds(String[] parts, PrintWriter out) {
         if (parts.length != 3) {
             out.println("ERROR Invalid UNBLOCK_FUNDS format");
@@ -191,6 +260,11 @@ public class BankClientHandler implements Runnable {
         out.println("OK");
     }
 
+    /**
+     * Transfer funds from an Agent to the Auction House in a successful bid
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void transferFunds(String[] parts, PrintWriter out) {
         if (parts.length != 4) {
             out.println("ERROR Invalid TRANSFER_FUNDS format");
@@ -204,17 +278,17 @@ public class BankClientHandler implements Runnable {
         Account from = accounts.get(fromId);
         Account to = accounts.get(toId);
 
-//        if (from == null || !from.isAgent || to == null || to.isAgent) {
-//            out.println("ERROR Invalid account IDs");
-//            return;
-//        }
+        if (from == null || !from.isAgent || to == null || to.isAgent) {
+            out.println("ERROR Invalid account IDs");
+            return;
+        }
 
         synchronized (from) {
             if (from.blockedFunds < amount) {
                 out.println("ERROR Not enough blocked funds");
                 return;
             }
-//            from.blockedFunds -= amount;
+            from.blockedFunds -= amount;
             System.out.println("Before transfer: " + from.totalBalance);
             from.totalBalance -= amount;
             System.out.println("Took " + amount + " from agent");
@@ -230,6 +304,11 @@ public class BankClientHandler implements Runnable {
         out.println("Transfer successful");
     }
 
+    /**
+     * Provide a client with their account total balance and available balance
+     * @param parts parts of message
+     * @param out output stream
+     */
     private void handleBalance(String[] parts, PrintWriter out) {
         if (parts.length != 2) {
             out.println("ERROR Invalid BALANCE format");

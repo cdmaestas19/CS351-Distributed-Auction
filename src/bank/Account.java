@@ -1,6 +1,14 @@
 package bank;
 
+/**
+ * Bank Account
+ *
+ * @author Christian Maestas
+ * @author Issac Tapia
+ * @author Dustin Ferguson
+ */
 public class Account {
+
     public final int id;
     public final String name;
     public final boolean isAgent;

@@ -1,5 +1,12 @@
 package bank;
 
+/**
+ * Bank Server
+ *
+ * @author Christian Maestas
+ * @author Isaac Tapia
+ * @author Dustin Ferguson
+ */
 public class BankServer {
     public static void main(String[] args) {
         if (args.length != 1) {

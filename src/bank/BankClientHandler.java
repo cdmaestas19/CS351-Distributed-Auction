@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Auction Houses
  *
  * @author Christian Maestas
- * @author Issac Tapia
- * @author Dustin Ferguson
  */
 
 public class BankClientHandler implements Runnable {
@@ -46,7 +44,9 @@ public class BankClientHandler implements Runnable {
      */
     private static final List<PrintWriter> agentWriters =
             Collections.synchronizedList(new ArrayList<>());
-    //Used for debugging
+    /**
+     * Agent ID to Writer
+     */
     private static final Map<Integer, PrintWriter> agentIdToWriter = new ConcurrentHashMap<>();
     /**
      * Auction House Addresses and names
@@ -227,12 +227,19 @@ public class BankClientHandler implements Runnable {
             return;
         }
 
+        PrintWriter writer = agentIdToWriter.get(agentId);
+
         synchronized (acc) {
-            if (acc.getAvailableBalance() < amount) {
+            if (acc.getAvailableBalance() <= amount) {
                 out.println("ERROR Insufficient funds");
             } else {
                 acc.blockedFunds += amount;
+                writer.println(Message.encode("BALANCE", String.valueOf(acc.totalBalance),
+                        String.valueOf(acc.getAvailableBalance())));
+                System.out.println("Sent balance update");
                 out.println("OK");
+                System.out.println("Blocked funds: " + acc.blockedFunds);
+                System.out.println("Available funds: " + acc.getAvailableBalance());
             }
         }
     }
@@ -288,9 +295,12 @@ public class BankClientHandler implements Runnable {
                 out.println("ERROR Not enough blocked funds");
                 return;
             }
+            System.out.println("Amount to be transferred " + amount);
             from.blockedFunds -= amount;
             System.out.println("Before transfer: " + from.totalBalance);
             from.totalBalance -= amount;
+            out.println(Message.encode("BALANCE", String.valueOf(from.totalBalance),
+                    String.valueOf(from.getAvailableBalance())));
             System.out.println("Took " + amount + " from agent");
             System.out.println("Agent total balance: " + from.totalBalance);
         }

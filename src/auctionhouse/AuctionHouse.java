@@ -167,13 +167,11 @@ public class AuctionHouse {
         return itemManager.hasActiveAuctions();
     }
 
-    public void broadcastItemUpdate(AuctionItem item, int excludeAgentId) {
+    public void broadcastItemUpdate(AuctionItem item) {
+        System.out.println("broadcasting item update ");
         for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
-            int agentId = entry.getKey();
-            if (agentId != excludeAgentId) {
-                AgentHandler handler = entry.getValue();
-                handler.sendItemUpdate(item);
-            }
+            AgentHandler handler = entry.getValue();
+            handler.sendItemUpdate(item);
         }
     }
 

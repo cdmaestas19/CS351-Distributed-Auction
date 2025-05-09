@@ -129,9 +129,10 @@ public class AgentHandler implements Runnable {
                     }
                 }
 
+                System.out.println("Bid placed on " + item.getDescription() + "for " + bidAmount);
                 item.placeBid(agentId, bidAmount);
                 itemManager.startAuctionTimer(item, auctionHouse);
-                auctionHouse.broadcastItemUpdate(item, agentId);
+                auctionHouse.broadcastItemUpdate(item);
                 out.println(Message.encode("ACCEPTED"));
             }
 
@@ -141,6 +142,7 @@ public class AgentHandler implements Runnable {
     }
 
     public void sendItemUpdate(AuctionItem item) {
+        System.out.println("sent item update");
         out.println(Message.encode(
                 "ITEM_UPDATED",
                 String.valueOf(item.getItemId()),

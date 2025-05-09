@@ -4,8 +4,6 @@ package bank;
  * Bank Account
  *
  * @author Christian Maestas
- * @author Issac Tapia
- * @author Dustin Ferguson
  */
 public class Account {
 

@@ -105,6 +105,9 @@ public class ItemManager {
         if (sold != null) {
             sold.markAsSold();
             soldItems.add(sold);
+
+            house.broadcastItemSold(itemId);
+
             if (!pendingItems.isEmpty()) {
                 AuctionItem next = pendingItems.poll();
                 activeItems.put(next.getItemId(), next);

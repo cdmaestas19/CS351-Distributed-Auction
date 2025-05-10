@@ -179,6 +179,18 @@ public class AuctionHouse {
             }).start();
         }
     }
+    public void broadcastItemSold(int itemId) {
+        for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
+            AgentHandler handler = entry.getValue();
+            new Thread(() -> {
+                try {
+                    handler.sendItemSoldNotification(itemId);
+                } catch (Exception e) {
+                    System.err.println("Failed to send ITEM_SOLD to Agent " + entry.getKey() + ": " + e.getMessage());
+                }
+            }).start();
+        }
+    }
 
     private String getExternalIpAddress() throws IOException {
         for (NetworkInterface netInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {

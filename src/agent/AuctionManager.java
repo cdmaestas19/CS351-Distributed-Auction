@@ -5,6 +5,7 @@ import shared.Message;
 import shared.SocketAuctionClient;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class AuctionManager implements Runnable {
@@ -12,7 +13,7 @@ public class AuctionManager implements Runnable {
     private String auctionId;
     private SocketAuctionClient auctionClient;
     private BufferedReader in;
-    private List<ItemInfo> items;
+    private final List<ItemInfo> items;
     private final BankClient bankClient;
     private Runnable onItemUpdate;
 
@@ -20,7 +21,7 @@ public class AuctionManager implements Runnable {
         this.auctionId = auctionId;
         this.auctionClient = auctionClient;
         this.bankClient = bankClient;
-        this.items = new ArrayList<>();
+        this.items = Collections.synchronizedList(new ArrayList<>());
     }
     
     @Override

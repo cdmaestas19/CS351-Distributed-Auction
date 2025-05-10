@@ -22,12 +22,14 @@ public class AuctionManager implements Runnable {
         this.bankClient = bankClient;
         this.items = new ArrayList<>();
     }
-
+    
     @Override
     public void run() {
-        
         try {
             parseItemsList(auctionClient.getAvailableItems());
+            if (onItemUpdate != null) {
+                javafx.application.Platform.runLater(onItemUpdate);
+            }
             in = auctionClient.getInputStream();
             
             while (true) {
@@ -39,7 +41,6 @@ public class AuctionManager implements Runnable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        
     }
     
     private void parseItemsList(List<String[]> itemList) {

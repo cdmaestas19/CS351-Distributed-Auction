@@ -48,9 +48,8 @@ public class AuctionManager implements Runnable {
             String description;
             int minBid;
             int currBid;
-            
             String itemId = item[1];
-            if (itemList.size() == 4) {
+            if (item.length == 4) {
                 description = item[2];
                 description = description.substring(1, description.length() - 1);
                 minBid = Integer.parseInt(item[3]);

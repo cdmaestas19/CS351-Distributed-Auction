@@ -69,6 +69,12 @@ public class SocketBankClient implements BankClient {
         }
     }
 
+    @Override
+    public void deregisterAuctionHouse(int id) {
+        String msg = (Message.encode("DEREGISTER", String.valueOf(id)));
+        sendMessage(msg);
+    }
+
     /**
      * Requests the bank to block a certain amount of funds from an agent's account.
      *

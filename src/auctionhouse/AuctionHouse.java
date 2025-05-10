@@ -96,7 +96,30 @@ public class AuctionHouse {
      * Gracefully shuts down the auction house.
      */
     public void shutdown() {
-        // TODO: Deregister from bank, close sockets, clean shutdown
+        if (hasActiveAuctions()) {
+            System.out.println("Shutdown aborted: Active auctions still in progress.");
+            return;
+        }
+
+        running = false;
+
+        try {
+            bankClient.deregisterAuctionHouse(accountId);
+            System.out.println("Deregistered auction house from bank.");
+        } catch (Exception e) {
+            System.err.println("Failed to deregister auction house: " + e.getMessage());
+        }
+
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing server socket: " + e.getMessage());
+        }
+
+        agentThreadPool.shutdownNow();
+        System.out.println("AuctionHouse shutdown complete.");
     }
 
     /**

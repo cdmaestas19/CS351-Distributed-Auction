@@ -29,6 +29,8 @@ public interface BankClient {
      */
     int registerAgent(String name, int initialBalance);
 
+    void deregisterAuctionHouse(int auctionHouseId);
+
     /**
      * Requests the bank to block a certain amount of funds from an agent's account.
      *

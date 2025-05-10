@@ -45,12 +45,23 @@ public class AuctionManager implements Runnable {
     private void parseItemsList(List<String[]> itemList) {
         
         for (String[] item : itemList) {
+            String description;
+            int minBid;
+            int currBid;
             
             String itemId = item[1];
-            String description = (item[2] + " " + item[3]);
-            description = description.substring(1, description.length() - 1);
-            int minBid = Integer.parseInt(item[4]);
-            int currBid = Integer.parseInt(item[5]);
+            if (itemList.size() == 4) {
+                description = item[2];
+                description = description.substring(1, description.length() - 1);
+                minBid = Integer.parseInt(item[3]);
+                currBid = Integer.parseInt(item[4]);
+            }
+            else {
+                description = (item[2] + " " + item[3]);
+                description = description.substring(1, description.length() - 1);
+                minBid = Integer.parseInt(item[4]);
+                currBid = Integer.parseInt(item[5]);
+            }
             ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description,
                     minBid, currBid);
             items.add(itemInfo);
@@ -63,8 +74,8 @@ public class AuctionManager implements Runnable {
 
         switch (parts[0]) {
             case "ACCEPTED" -> {
-                System.out.println("Bid accepted.");
-                // TODO: GUI callback for success
+                String acceptMessage = new String("Bid accepted.");
+//                dashboardGUI.displayMessage(acceptMessage);
             }
 
             case "REJECTED" -> {

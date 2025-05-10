@@ -125,6 +125,7 @@ public class BankClientHandler implements Runnable {
 
         int id = idGenerator.getAndIncrement();
         accounts.put(id, new Account(id, name, true, initialBalance));
+        System.out.println("Agent registered: " + name);
         out.println("OK " + id);
 
         agentWriters.add(out);
@@ -152,9 +153,7 @@ public class BankClientHandler implements Runnable {
 
         String value = (host + ":" + port);
         auctionHouseAddresses.put(id, value);
-//        auctionHouseAddresses.put(port, new ArrayList<>());
-//        auctionHouseAddresses.get(port).add(host);
-//        auctionHouseAddresses.get(port).add(String.valueOf(id));
+        System.out.println("Auction house registered: " + name);
 
         String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port),
                 String.valueOf(id));
@@ -224,6 +223,7 @@ public class BankClientHandler implements Runnable {
                 out.println("ERROR Insufficient funds");
             } else {
                 account.setBlockedFunds(amount);
+                System.out.println("Blocked Funds: " + account.getName());
                 out.println("OK");
                 writer.println(Message.encode("BALANCE", String.valueOf(account.getTotalBalance()),
                         String.valueOf(account.getAvailableBalance())));
@@ -248,7 +248,7 @@ public class BankClientHandler implements Runnable {
         if (account != null && account.isAgent) {
             synchronized (account) {
                 account.setBlockedFunds(-amount);
-                System.out.println("Unblocked funds");
+                System.out.println("Unblocked Funds: " + amount + "from " + account.getName());
                 out.println("OK");
                 if (account.getBlockedFunds() < 0) {
                     account.setBlockedFunds(0);
@@ -296,6 +296,8 @@ public class BankClientHandler implements Runnable {
             //Transfer to Auction House account
             to.setTotalBalance(amount);
         }
+        System.out.println("Funds transferred from: " + from.getName() + " to "
+                + to.getName());
     }
 
     /**

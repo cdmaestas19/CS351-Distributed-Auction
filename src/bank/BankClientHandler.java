@@ -125,7 +125,6 @@ public class BankClientHandler implements Runnable {
 
         int id = idGenerator.getAndIncrement();
         accounts.put(id, new Account(id, name, true, initialBalance));
-        out.println("OK " + id);
 
         agentWriters.add(out);
         agentIdToWriter.put(id, out);
@@ -183,9 +182,7 @@ public class BankClientHandler implements Runnable {
         agentWriters.add(out);
         agentIdToWriter.put(agentId, out);
 
-        int counter = 1;
         for (Map.Entry<Integer, List<String>> entry : auctionHouseAddresses.entrySet()) {
-            System.out.println(counter);
             String host = entry.getValue().getFirst();
             int port = entry.getKey();
             String id = entry.getValue().getLast();
@@ -223,6 +220,7 @@ public class BankClientHandler implements Runnable {
                 out.println("ERROR Insufficient funds");
             } else {
                 account.setBlockedFunds(amount);
+                out.println("OK");
                 writer.println(Message.encode("BALANCE", String.valueOf(account.getTotalBalance()),
                         String.valueOf(account.getAvailableBalance())));
             }

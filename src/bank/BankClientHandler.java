@@ -50,8 +50,7 @@ public class BankClientHandler implements Runnable {
     /**
      * Auction House Addresses and names
      */
-    private static final Map<Integer, List<String>> auctionHouseAddresses =
-            new ConcurrentHashMap<>();
+    private static final Map<Integer, String> auctionHouseAddresses = new ConcurrentHashMap<>();
 
 
     /**
@@ -125,7 +124,6 @@ public class BankClientHandler implements Runnable {
 
         int id = idGenerator.getAndIncrement();
         accounts.put(id, new Account(id, name, true, initialBalance));
-        out.println("OK " + id);
 
         agentWriters.add(out);
         agentIdToWriter.put(id, out);
@@ -150,19 +148,15 @@ public class BankClientHandler implements Runnable {
 
         accounts.put(id, new Account(id, name, false, 0));
 
-        auctionHouseAddresses.put(port, new ArrayList<>());
-        auctionHouseAddresses.get(port).add(host);
-        auctionHouseAddresses.get(port).add(String.valueOf(id));
+        String address = host + ":" + port;
+        auctionHouseAddresses.put(id, address);
 
         String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port),
                 String.valueOf(id));
-        for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
-            PrintWriter writer = entry.getValue();
+        for (PrintWriter writer : agentIdToWriter.values()) {
             writer.println(msg);
             writer.flush();
         }
-
-        out.println("OK " + id);
     }
 
     /**
@@ -183,14 +177,14 @@ public class BankClientHandler implements Runnable {
         agentWriters.add(out);
         agentIdToWriter.put(agentId, out);
 
-        int counter = 1;
-        for (Map.Entry<Integer, List<String>> entry : auctionHouseAddresses.entrySet()) {
-            System.out.println(counter);
-            String host = entry.getValue().getFirst();
-            int port = entry.getKey();
-            String id = entry.getValue().getLast();
+        for (Map.Entry<Integer, String> entry : auctionHouseAddresses.entrySet()) {
+            int id = entry.getKey();
+            String[] split = entry.getValue().split(":");
+            String host = split[0];
+            String port = split[1];
 
-            String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port), id);
+            String msg = Message.encode("AUCTION_HOUSE", host, port,
+                    String.valueOf(id));
             out.println(msg);
             out.flush();
         }

@@ -79,6 +79,7 @@ public class Bank {
                         accounts,
                         initAccountID
                 ));
+                System.out.println("Bank client accepted: " + clientSocket.getInetAddress());
             } catch (IOException e) {
                 if (running.get()) {
                     System.err.println("Error accepting connection: " + e.getMessage());

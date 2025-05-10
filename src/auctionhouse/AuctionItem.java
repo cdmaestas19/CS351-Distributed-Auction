@@ -17,6 +17,7 @@ public class AuctionItem {
     private int currentBid;
     private int currentBidderId;
     private boolean sold;
+    private boolean active;
 
     /**
      * Constructs an AuctionItem with the given ID, description, and minimum bid.
@@ -78,6 +79,10 @@ public class AuctionItem {
         return sold;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     /**
      * Attempts to place a bid on the item.
      * The bid is accepted only if the item is still open and the bid is valid.
@@ -86,7 +91,6 @@ public class AuctionItem {
      * @param bidAmount the amount of the bid
      */
     public synchronized void placeBid(int agentId, int bidAmount) {
-        // TODO: add real bid validation logic later
         if (sold || bidAmount <= currentBid || bidAmount < minimumBid) {
             return;
         }
@@ -99,6 +103,10 @@ public class AuctionItem {
      */
     public synchronized void markAsSold() {
         this.sold = true;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     /**

@@ -3,9 +3,9 @@ package auctionhouse;
 import shared.BankClient;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,15 +176,22 @@ public class AuctionHouse {
     }
 
     private String getExternalIpAddress() throws IOException {
-        for (var netInterface : java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
-            if (netInterface.isLoopback() || !netInterface.isUp()) continue;
+        for (NetworkInterface netInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (netInterface.isLoopback() || !netInterface.isUp() || netInterface.isVirtual()) continue;
 
-            for (var inetAddress : java.util.Collections.list(netInterface.getInetAddresses())) {
-                if (inetAddress instanceof java.net.Inet4Address && !inetAddress.isLoopbackAddress()) {
-                    return inetAddress.getHostAddress();
+            for (InetAddress address : Collections.list(netInterface.getInetAddresses())) {
+                if (address instanceof Inet4Address
+                        && !address.isLoopbackAddress()
+                        && !address.isLinkLocalAddress()) {
+
+                    String ip = address.getHostAddress();
+
+                    if (ip.startsWith("172.") || ip.startsWith("169.")) continue;
+
+                    return ip;
                 }
             }
         }
-        throw new IOException("No external IP address found");
+        throw new IOException("No suitable external IP address found.");
     }
 }

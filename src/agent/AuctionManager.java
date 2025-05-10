@@ -45,23 +45,28 @@ public class AuctionManager implements Runnable {
     private void parseItemsList(List<String[]> itemList) {
         
         for (String[] item : itemList) {
-            String itemId = item[1];
-            
-            // Reconstruct the quoted description from index 2 to length - 3
-            StringBuilder descBuilder = new StringBuilder();
-            for (int i = 2; i < item.length - 2; i++) {
-                descBuilder.append(item[i]);
-                if (i != item.length - 3) descBuilder.append(" ");
-            }
-            String description = descBuilder.toString();
-            description = description.substring(1, description.length() - 1); // Strip quotes
-            
-            int minBid = Integer.parseInt(item[item.length - 2]);
-            int currBid = Integer.parseInt(item[item.length - 1]);
-            
-            ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description, minBid, currBid);
-            items.add(itemInfo);
+            parseItem(item);
         }
+    }
+    
+    private void parseItem(String[] item) {
+        
+        String itemId = item[1];
+        
+        // Reconstruct the quoted description from index 2 to length - 3
+        StringBuilder descBuilder = new StringBuilder();
+        for (int i = 2; i < item.length - 2; i++) {
+            descBuilder.append(item[i]);
+            if (i != item.length - 3) descBuilder.append(" ");
+        }
+        String description = descBuilder.toString();
+        description = description.substring(1, description.length() - 1); // Strip quotes
+        
+        int minBid = Integer.parseInt(item[item.length - 2]);
+        int currBid = Integer.parseInt(item[item.length - 1]);
+        
+        ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description, minBid, currBid);
+        items.add(itemInfo);
     }
 
     public void handleMessage(String message) throws IOException {
@@ -93,7 +98,7 @@ public class AuctionManager implements Runnable {
                             int fromAgentId = auctionClient.getAgentId();
                             int toAuctionHouseId = Integer.parseInt(auctionId);
                             int amount = item.currBid;
-
+                            
                             bankClient.transferFunds(fromAgentId, toAuctionHouseId, amount);
                             System.out.printf("Transferred $%d from agent %d to auction house %d for item %s\n",
                                     amount, fromAgentId, toAuctionHouseId, itemId);
@@ -107,21 +112,34 @@ public class AuctionManager implements Runnable {
             }
 
             case "ITEM_UPDATED" -> {
-                System.out.println("item update");
-                String itemId = parts[1];
-                int minBid = Integer.parseInt(parts[2]);
-                int currBid = Integer.parseInt(parts[2]);
-
-                // Find the matching item and update it
-                for (ItemInfo item : items) {
-                    if (item.itemId.equals(itemId)) {
-                        item.minBid = minBid;
-                        item.currBid = currBid;
-                        System.out.println("Item updated: " + item);
-                        break;
+                if (parts.length < 3) {
+                    System.out.println("item update");
+                    String itemId = parts[1];
+                    int minBid = Integer.parseInt(parts[2]);
+                    int currBid = Integer.parseInt(parts[2]);
+                    
+                    // Find the matching item and update it
+                    for (ItemInfo item : items) {
+                        if (item.itemId.equals(itemId)) {
+                            item.minBid = minBid;
+                            item.currBid = currBid;
+                            System.out.println("Item updated: " + item);
+                            break;
+                        }
+                    }
+                    
+                    if (onItemUpdate != null) {
+                        javafx.application.Platform.runLater(onItemUpdate);
                     }
                 }
-
+                else { parseItem(parts); }
+            }
+            
+            case "ITEM_SOLD" -> {
+                String itemId = parts[1];
+                items.removeIf(item -> item.itemId.equals(itemId));
+                System.out.println("Item " + itemId + " has been sold and removed from the list.");
+                
                 if (onItemUpdate != null) {
                     javafx.application.Platform.runLater(onItemUpdate);
                 }

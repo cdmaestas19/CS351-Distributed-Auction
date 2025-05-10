@@ -147,8 +147,6 @@ public class AgentHandler implements Runnable {
         out.println(Message.encode(
                 "ITEM_UPDATED",
                 String.valueOf(item.getItemId()),
-                "\"" + item.getDescription() + "\"",
-                String.valueOf(item.getMinimumBid()),
                 String.valueOf(item.getCurrentBid())
         ));
     }

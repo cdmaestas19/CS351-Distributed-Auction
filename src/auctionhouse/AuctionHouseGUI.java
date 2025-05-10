@@ -1,6 +1,7 @@
 package auctionhouse;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -65,9 +66,14 @@ public class AuctionHouseGUI {
         bidCol.setCellValueFactory(new PropertyValueFactory<>("currentBid"));
 
         TableColumn<AuctionItem, String> statusCol = new TableColumn<>("Status");
+
         statusCol.setCellValueFactory(cellData -> {
             AuctionItem item = cellData.getValue();
-            return javafx.beans.binding.Bindings.createStringBinding(() -> item.isSold() ? "SOLD" : "ACTIVE");
+            return Bindings.createStringBinding(() -> {
+                if (item.isSold()) return "SOLD";
+                if (item.isActive()) return "ACTIVE";
+                return "WAITING";
+            });
         });
 
         itemTable.getColumns().addAll(List.of(idCol, descCol, minBidCol, bidCol, statusCol));

@@ -1,6 +1,5 @@
 package auctionhouse;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ItemManager {
     private final Map<Integer, AuctionItem> activeItems;
     private final Queue<AuctionItem> pendingItems;
+    private final List<AuctionItem> soldItems;
     private final AtomicInteger nextItemId;
     private final ScheduledExecutorService auctionTimerService = Executors.newScheduledThreadPool(4);
     private final Map<Integer, ScheduledFuture<?>> timers = new ConcurrentHashMap<>();
@@ -15,10 +15,13 @@ public class ItemManager {
     public ItemManager() {
         this.activeItems = new ConcurrentHashMap<>();
         this.pendingItems = new ConcurrentLinkedQueue<>();
+        this.soldItems = Collections.synchronizedList(new ArrayList<>());
         this.nextItemId = new AtomicInteger(1);
     }
 
     public void loadItemsFromResource(String resourceName) {
+        List<AuctionItem> all = new ArrayList<>();
+
         try (Scanner scanner = new Scanner(
                 Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceName)))) {
 
@@ -31,12 +34,16 @@ public class ItemManager {
                     String desc = parts[0].trim();
                     int minBid = Integer.parseInt(parts[1].trim());
                     AuctionItem item = new AuctionItem(nextItemId.getAndIncrement(), desc, minBid);
-                    pendingItems.add(item);
+                    all.add(item);
                 }
             }
 
+            Collections.shuffle(all);
+            pendingItems.addAll(all);
+
             for (int i = 0; i < 3 && !pendingItems.isEmpty(); i++) {
                 AuctionItem item = pendingItems.poll();
+                item.setActive(true);
                 activeItems.put(item.getItemId(), item);
             }
         }
@@ -51,6 +58,7 @@ public class ItemManager {
 
         allItems.addAll(activeItems.values());
         allItems.addAll(pendingItems);
+        allItems.addAll(soldItems);
 
         return allItems;
     }
@@ -96,9 +104,11 @@ public class ItemManager {
         AuctionItem sold = activeItems.remove(itemId);
         if (sold != null) {
             sold.markAsSold();
+            soldItems.add(sold);
             if (!pendingItems.isEmpty()) {
                 AuctionItem next = pendingItems.poll();
                 activeItems.put(next.getItemId(), next);
+                house.broadcastItemUpdate(next);
             }
             house.triggerUpdate();
         }

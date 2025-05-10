@@ -102,14 +102,12 @@ public class AuctionManager implements Runnable {
             case "ITEM_UPDATED" -> {
                 System.out.println("item update");
                 String itemId = parts[1];
-                String description = parts[2].substring(1, parts[2].length() - 1);
-                int minBid = Integer.parseInt(parts[3]);
-                int currBid = Integer.parseInt(parts[4]);
+                int minBid = Integer.parseInt(parts[2]);
+                int currBid = Integer.parseInt(parts[2]);
 
                 // Find the matching item and update it
                 for (ItemInfo item : items) {
                     if (item.itemId.equals(itemId)) {
-                        item.description = description;
                         item.minBid = minBid;
                         item.currBid = currBid;
                         System.out.println("Item updated: " + item);

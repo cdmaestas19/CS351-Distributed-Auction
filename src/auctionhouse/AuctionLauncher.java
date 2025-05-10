@@ -41,6 +41,7 @@ public class AuctionLauncher extends Application {
             new Thread(() -> house.start()).start();
 
             AuctionHouseGUI gui = new AuctionHouseGUI(house);
+            house.setOnUpdate(gui::updateUI);
             gui.show(primaryStage);
 
         } catch (Exception e) {

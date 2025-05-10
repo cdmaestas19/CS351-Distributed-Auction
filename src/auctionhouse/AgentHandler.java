@@ -133,6 +133,7 @@ public class AgentHandler implements Runnable {
                 item.placeBid(agentId, bidAmount);
                 itemManager.startAuctionTimer(item, auctionHouse);
                 auctionHouse.broadcastItemUpdate(item);
+                auctionHouse.triggerUpdate();
                 out.println(Message.encode("ACCEPTED"));
             }
 

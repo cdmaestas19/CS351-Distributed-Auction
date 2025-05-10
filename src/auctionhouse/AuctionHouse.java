@@ -27,11 +27,10 @@ public class AuctionHouse {
     private final ExecutorService agentThreadPool;
     private volatile boolean running = false;
     public int accountId;
-
     private final BankClient bankClient;
     private final ItemManager itemManager;
-
     private final Map<Integer, AgentHandler> agentHandlers = new ConcurrentHashMap<>();
+    private Runnable onUpdateCallback;
 
     /**
      * Constructs an AuctionHouse that manages agents, items, and bank interaction.
@@ -109,6 +108,7 @@ public class AuctionHouse {
      */
     public void registerAgent(int agentId, AgentHandler handler) {
         agentHandlers.put(agentId, handler);
+        triggerUpdate();
     }
 
     /**
@@ -168,10 +168,15 @@ public class AuctionHouse {
     }
 
     public void broadcastItemUpdate(AuctionItem item) {
-        System.out.println("broadcasting item update ");
         for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
             AgentHandler handler = entry.getValue();
-            handler.sendItemUpdate(item);
+            new Thread(() -> {
+                try {
+                    handler.sendItemUpdate(item);
+                } catch (Exception e) {
+                    System.err.println("Failed to send item update to Agent " + entry.getKey() + ": " + e.getMessage());
+                }
+            }).start();
         }
     }
 
@@ -193,5 +198,15 @@ public class AuctionHouse {
             }
         }
         throw new IOException("No suitable external IP address found.");
+    }
+
+    public void setOnUpdate(Runnable callback) {
+        this.onUpdateCallback = callback;
+    }
+
+    public void triggerUpdate() {
+        if (onUpdateCallback != null) {
+            onUpdateCallback.run();
+        }
     }
 }

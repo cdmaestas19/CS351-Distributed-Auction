@@ -76,7 +76,7 @@ public class ItemManager {
                 if (winnerId == -1) return;
 
                 item.markAsSold();
-                markItemAsSold(itemId);
+                markItemAsSold(itemId, house);
 
                 AgentHandler handler = house.getAgentHandler(winnerId);
                 if (handler != null) {
@@ -92,7 +92,7 @@ public class ItemManager {
     }
 
 
-    public synchronized void markItemAsSold(int itemId) {
+    public synchronized void markItemAsSold(int itemId, AuctionHouse house) {
         AuctionItem sold = activeItems.remove(itemId);
         if (sold != null) {
             sold.markAsSold();
@@ -100,6 +100,7 @@ public class ItemManager {
                 AuctionItem next = pendingItems.poll();
                 activeItems.put(next.getItemId(), next);
             }
+            house.triggerUpdate();
         }
     }
 

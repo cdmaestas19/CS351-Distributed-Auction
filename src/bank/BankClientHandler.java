@@ -50,7 +50,7 @@ public class BankClientHandler implements Runnable {
     /**
      * Auction House Addresses and names
      */
-    private static final Map<Integer, List<String>> auctionHouseAddresses =
+    private static final Map<Integer, String> auctionHouseAddresses =
             new ConcurrentHashMap<>();
 
 
@@ -125,6 +125,7 @@ public class BankClientHandler implements Runnable {
 
         int id = idGenerator.getAndIncrement();
         accounts.put(id, new Account(id, name, true, initialBalance));
+        out.println("OK " + id);
 
         agentWriters.add(out);
         agentIdToWriter.put(id, out);
@@ -149,9 +150,11 @@ public class BankClientHandler implements Runnable {
 
         accounts.put(id, new Account(id, name, false, 0));
 
-        auctionHouseAddresses.put(port, new ArrayList<>());
-        auctionHouseAddresses.get(port).add(host);
-        auctionHouseAddresses.get(port).add(String.valueOf(id));
+        String value = (host + ":" + port);
+        auctionHouseAddresses.put(id, value);
+//        auctionHouseAddresses.put(port, new ArrayList<>());
+//        auctionHouseAddresses.get(port).add(host);
+//        auctionHouseAddresses.get(port).add(String.valueOf(id));
 
         String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port),
                 String.valueOf(id));
@@ -182,10 +185,11 @@ public class BankClientHandler implements Runnable {
         agentWriters.add(out);
         agentIdToWriter.put(agentId, out);
 
-        for (Map.Entry<Integer, List<String>> entry : auctionHouseAddresses.entrySet()) {
-            String host = entry.getValue().getFirst();
-            int port = entry.getKey();
-            String id = entry.getValue().getLast();
+        for (Map.Entry<Integer, String> entry : auctionHouseAddresses.entrySet()) {
+            String[] split = entry.getValue().split(":");
+            String host = split[0];
+            int port = Integer.parseInt(split[1]);
+            String id = String.valueOf(entry.getKey());
 
             String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port), id);
             out.println(msg);
@@ -244,6 +248,8 @@ public class BankClientHandler implements Runnable {
         if (account != null && account.isAgent) {
             synchronized (account) {
                 account.setBlockedFunds(-amount);
+                System.out.println("Unblocked funds");
+                out.println("OK");
                 if (account.getBlockedFunds() < 0) {
                     account.setBlockedFunds(0);
                 }

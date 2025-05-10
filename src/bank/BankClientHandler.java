@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class BankClientHandler implements Runnable {
-    //TODO: delete any debugging wth agentIdToWriter or output comments
     /**
      * Socket
      */
@@ -59,11 +58,9 @@ public class BankClientHandler implements Runnable {
      * BankClientHandler constructor
      * @param socket socket
      * @param accounts accounts
-     * @param auctionHouseAddresses auction house addresses
      * @param idGenerator id generator
      */
-    public BankClientHandler(Socket socket, Map<Integer, Account> accounts,
-                             Map<Integer, List<String>> auctionHouseAddresses, AtomicInteger idGenerator) {
+    public BankClientHandler(Socket socket, Map<Integer, Account> accounts, AtomicInteger idGenerator) {
         this.socket = socket;
         this.accounts = accounts;
         this.idGenerator = idGenerator;
@@ -156,18 +153,13 @@ public class BankClientHandler implements Runnable {
         auctionHouseAddresses.put(port, new ArrayList<>());
         auctionHouseAddresses.get(port).add(host);
         auctionHouseAddresses.get(port).add(String.valueOf(id));
-        System.out.println(auctionHouseAddresses.size());
-
-        System.out.printf("Auction house registered: %s:%d\n", host, port);
 
         String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port),
                 String.valueOf(id));
         for (Map.Entry<Integer, PrintWriter> entry : agentIdToWriter.entrySet()) {
-            int agentId = entry.getKey();
             PrintWriter writer = entry.getValue();
             writer.println(msg);
             writer.flush();
-            System.out.printf("→ Notified agent ID %d of new auction house %s:%d\n", agentId, host, port);
         }
 
         out.println("OK " + id);
@@ -183,14 +175,13 @@ public class BankClientHandler implements Runnable {
      */
     private void handleAgentChannel(String[] parts, PrintWriter out) {
         if (parts.length != 2) {
-            out.println("ERROR Invalid REGISTER_AGENT_CHANNEL format");
+            out.println("ERROR Invalid Message format");
             return;
         }
 
         int agentId = Integer.parseInt(parts[1]);
         agentWriters.add(out);
         agentIdToWriter.put(agentId, out);
-        System.out.printf("Registered persistent channel for agent ID %d\n", agentId);
 
         int counter = 1;
         for (Map.Entry<Integer, List<String>> entry : auctionHouseAddresses.entrySet()) {
@@ -202,14 +193,12 @@ public class BankClientHandler implements Runnable {
             String msg = Message.encode("AUCTION_HOUSE", host, String.valueOf(port), id);
             out.println(msg);
             out.flush();
-            System.out.printf("→ Sent existing auction house %s:%d to agent %d\n", host, port, agentId);
-            counter++;
         }
     }
 
 
     /**
-     * Block funds
+     * Block funds when an Agent makes a successful bid
      * @param parts parts of message
      * @param out output stream
      */
@@ -221,31 +210,27 @@ public class BankClientHandler implements Runnable {
         int agentId = Integer.parseInt(parts[1]);
         int amount = Integer.parseInt(parts[2]);
 
-        Account acc = accounts.get(agentId);
-        if (acc == null || !acc.isAgent) {
+        Account account = accounts.get(agentId);
+        if (account == null || !account.isAgent) {
             out.println("ERROR Invalid agent ID");
             return;
         }
 
         PrintWriter writer = agentIdToWriter.get(agentId);
 
-        synchronized (acc) {
-            if (acc.getAvailableBalance() <= amount) {
+        synchronized (account) {
+            if (account.getAvailableBalance() < amount) {
                 out.println("ERROR Insufficient funds");
             } else {
-                acc.blockedFunds += amount;
-                writer.println(Message.encode("BALANCE", String.valueOf(acc.totalBalance),
-                        String.valueOf(acc.getAvailableBalance())));
-                System.out.println("Sent balance update");
-                out.println("OK");
-                System.out.println("Blocked funds: " + acc.blockedFunds);
-                System.out.println("Available funds: " + acc.getAvailableBalance());
+                account.setBlockedFunds(amount);
+                writer.println(Message.encode("BALANCE", String.valueOf(account.getTotalBalance()),
+                        String.valueOf(account.getAvailableBalance())));
             }
         }
     }
 
     /**
-     * Unblock funds
+     * Unblock funds from Agent account
      * @param parts parts of message
      * @param out output stream
      */
@@ -257,14 +242,15 @@ public class BankClientHandler implements Runnable {
         int agentId = Integer.parseInt(parts[1]);
         int amount = Integer.parseInt(parts[2]);
 
-        Account acc = accounts.get(agentId);
-        if (acc != null && acc.isAgent) {
-            synchronized (acc) {
-                acc.blockedFunds -= amount;
-                if (acc.blockedFunds < 0) acc.blockedFunds = 0;
+        Account account = accounts.get(agentId);
+        if (account != null && account.isAgent) {
+            synchronized (account) {
+                account.setBlockedFunds(-amount);
+                if (account.getBlockedFunds() < 0) {
+                    account.setBlockedFunds(0);
+                }
             }
         }
-        out.println("OK");
     }
 
     /**
@@ -291,27 +277,21 @@ public class BankClientHandler implements Runnable {
         }
 
         synchronized (from) {
-            if (from.blockedFunds < amount) {
+            if (from.getBlockedFunds() < amount) {
                 out.println("ERROR Not enough blocked funds");
                 return;
             }
-            System.out.println("Amount to be transferred " + amount);
-            from.blockedFunds -= amount;
-            System.out.println("Before transfer: " + from.totalBalance);
-            from.totalBalance -= amount;
-            out.println(Message.encode("BALANCE", String.valueOf(from.totalBalance),
+            //Remove funds from Agent blocked and total balance
+            from.setBlockedFunds(-amount);
+            from.setTotalBalance(-amount);
+            out.println(Message.encode("BALANCE", String.valueOf(from.getTotalBalance()),
                     String.valueOf(from.getAvailableBalance())));
-            System.out.println("Took " + amount + " from agent");
-            System.out.println("Agent total balance: " + from.totalBalance);
         }
 
         synchronized (to) {
-            to.totalBalance += amount;
-            System.out.println("Added to auction account");
-            System.out.println("Auction house total balance: " + to.totalBalance);
+            //Transfer to Auction House account
+            to.setTotalBalance(amount);
         }
-
-        out.println("Transfer successful");
     }
 
     /**
@@ -339,7 +319,7 @@ public class BankClientHandler implements Runnable {
             return;
         }
 
-        int total = account.totalBalance;
+        int total = account.getTotalBalance();
         int available = account.getAvailableBalance();
 
         out.println(Message.encode("BALANCE", String.valueOf(total),

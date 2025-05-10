@@ -3,9 +3,9 @@ package bank;
 /**
  * Bank Server
  *
+ * Start the Bank server
+ *
  * @author Christian Maestas
- * @author Isaac Tapia
- * @author Dustin Ferguson
  */
 public class BankServer {
     public static void main(String[] args) {

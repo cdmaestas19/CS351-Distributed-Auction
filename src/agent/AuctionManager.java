@@ -110,29 +110,38 @@ public class AuctionManager implements Runnable {
                     }
                 }
             }
-
+            
             case "ITEM_UPDATED" -> {
-                if (parts.length < 3) {
-                    System.out.println("item update");
+                if (parts.length >= 5) {
                     String itemId = parts[1];
-                    int minBid = Integer.parseInt(parts[2]);
-                    int currBid = Integer.parseInt(parts[2]);
+                    StringBuilder descBuilder = new StringBuilder();
+                    for (int i = 2; i < parts.length - 2; i++) {
+                        descBuilder.append(parts[i]);
+                        if (i != parts.length - 3) descBuilder.append(" ");
+                    }
+                    String description = descBuilder.toString();
+                    description = description.substring(1, description.length() - 1); // strip quotes
+                    int minBid = Integer.parseInt(parts[parts.length - 2]);
+                    int currBid = Integer.parseInt(parts[parts.length - 1]);
                     
-                    // Find the matching item and update it
+                    boolean updated = false;
                     for (ItemInfo item : items) {
                         if (item.itemId.equals(itemId)) {
+                            item.description = description;
                             item.minBid = minBid;
                             item.currBid = currBid;
-                            System.out.println("Item updated: " + item);
+                            updated = true;
                             break;
                         }
+                    }
+                    if (!updated) {
+                        items.add(new ItemInfo(auctionId, itemId, description, minBid, currBid));
                     }
                     
                     if (onItemUpdate != null) {
                         javafx.application.Platform.runLater(onItemUpdate);
                     }
                 }
-                else { parseItem(parts); }
             }
             
             case "ITEM_SOLD" -> {

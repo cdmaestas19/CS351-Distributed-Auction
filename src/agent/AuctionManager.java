@@ -45,24 +45,21 @@ public class AuctionManager implements Runnable {
     private void parseItemsList(List<String[]> itemList) {
         
         for (String[] item : itemList) {
-            String description;
-            int minBid;
-            int currBid;
             String itemId = item[1];
-            if (item.length == 4) {
-                description = item[2];
-                description = description.substring(1, description.length() - 1);
-                minBid = Integer.parseInt(item[3]);
-                currBid = Integer.parseInt(item[4]);
+            
+            // Reconstruct the quoted description from index 2 to length - 3
+            StringBuilder descBuilder = new StringBuilder();
+            for (int i = 2; i < item.length - 2; i++) {
+                descBuilder.append(item[i]);
+                if (i != item.length - 3) descBuilder.append(" ");
             }
-            else {
-                description = (item[2] + " " + item[3]);
-                description = description.substring(1, description.length() - 1);
-                minBid = Integer.parseInt(item[4]);
-                currBid = Integer.parseInt(item[5]);
-            }
-            ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description,
-                    minBid, currBid);
+            String description = descBuilder.toString();
+            description = description.substring(1, description.length() - 1); // Strip quotes
+            
+            int minBid = Integer.parseInt(item[item.length - 2]);
+            int currBid = Integer.parseInt(item[item.length - 1]);
+            
+            ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description, minBid, currBid);
             items.add(itemInfo);
         }
     }

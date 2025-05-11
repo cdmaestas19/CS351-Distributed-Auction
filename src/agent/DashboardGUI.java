@@ -274,6 +274,20 @@ public class DashboardGUI {
         auctionSelector.getSelectionModel().selectFirst();
     }
 
+    public void removeAuctionHouse(String auctionId) {
+        Platform.runLater(() -> {
+            auctionMap.remove(auctionId);
+            auctionSelector.getItems().remove(auctionId);
+
+            if (auctionId.equals(auctionSelector.getValue())) {
+                itemTable.getItems().clear();
+                auctionSelector.getSelectionModel().clearSelection();
+            }
+
+            displayMessage("Auction house " + auctionId + " removed from system.");
+        });
+    }
+
     private void updateItemTable(AuctionManager manager) {
         itemTable.getItems().setAll(manager.getItems());
     }

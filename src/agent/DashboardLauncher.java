@@ -22,6 +22,7 @@ public class DashboardLauncher extends Application {
             manager.setOnItemUpdate(() ->
                     gui.refreshAuctionTable(manager.getAuctionId()));
         });
+        agent.setOnAuctionRemoved(gui::removeAuctionHouse);
 
         gui.show(primaryStage);
     }

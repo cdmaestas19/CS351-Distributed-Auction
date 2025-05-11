@@ -21,6 +21,7 @@ public class Agent implements Runnable {
     private Runnable onBalanceUpdate;
     private Consumer<AuctionManager> onAuctionConnected;
     private Consumer<String> onMessage;
+    private Consumer<String> onAuctionRemoved;
 
     
     public Agent(Socket bankSocket, String agentName, int agentID,
@@ -103,11 +104,14 @@ public class Agent implements Runnable {
                 if (toRemove != null) {
                     try {
                         toRemove.getClient().close();
-                        sendGuiMessage("Auction house " + removedId + " has been removed.");
                     } catch (IOException e) {
                         System.err.println("Failed to close auction client for removed house: " + e.getMessage());
                     }
                     auctionManagers.remove(toRemove);
+
+                    if (onAuctionRemoved != null) {
+                        javafx.application.Platform.runLater(() -> onAuctionRemoved.accept(removedId));
+                    }
                 }
                 break;
             }
@@ -137,6 +141,10 @@ public class Agent implements Runnable {
         for (AuctionManager manager : auctionManagers) {
             javafx.application.Platform.runLater(() -> callback.accept(manager));
         }
+    }
+
+    public void setOnAuctionRemoved(Consumer<String> callback) {
+        this.onAuctionRemoved = callback;
     }
 
     public int getTotalBalance() {

@@ -70,7 +70,7 @@ public class SocketBankClient implements BankClient {
     }
 
     @Override
-    public void deregisterAuctionHouse(int id) {
+    public void deregister(int id) {
         String msg = (Message.encode("DEREGISTER", String.valueOf(id)));
         sendMessage(msg);
     }

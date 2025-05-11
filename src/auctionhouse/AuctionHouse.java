@@ -104,7 +104,7 @@ public class AuctionHouse {
         running = false;
 
         try {
-            bankClient.deregisterAuctionHouse(accountId);
+            bankClient.deregister(accountId);
             System.out.println("Deregistered auction house from bank.");
         } catch (Exception e) {
             System.err.println("Failed to deregister auction house: " + e.getMessage());

@@ -168,8 +168,8 @@ public class AgentHandler implements Runnable {
         out.println(Message.encode("OUTBID", String.valueOf(itemId)));
     }
 
-    public void sendWinnerNotification(int amount) {
-        out.println(Message.encode("WINNER", String.valueOf(amount)));
+    public void sendWinnerNotification(int amount, int itemId) {
+        out.println(Message.encode("WINNER", String.valueOf(amount), String.valueOf(itemId)));
     }
 
     private void close() {

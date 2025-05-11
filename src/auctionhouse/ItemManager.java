@@ -88,7 +88,7 @@ public class ItemManager {
 
                 AgentHandler handler = house.getAgentHandler(winnerId);
                 if (handler != null) {
-                    handler.sendWinnerNotification(amount);
+                    handler.sendWinnerNotification(amount, itemId);
                 }
 
                 System.out.printf("Auction ended: item %d sold to agent %d for %d\n",

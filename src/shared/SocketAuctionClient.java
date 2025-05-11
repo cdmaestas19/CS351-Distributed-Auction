@@ -47,10 +47,10 @@ public class SocketAuctionClient implements AuctionClient {
     }
 
     @Override
-    public boolean placeBid(int itemId, int amount) throws IOException {
+    public void placeBid(int itemId, int amount) throws IOException {
         out.println(Message.encode("BID", String.valueOf(itemId), String.valueOf(amount)));
-        String response = in.readLine();
-        return response != null && response.startsWith("ACCEPTED");
+//        String response = in.readLine();
+//        return response != null && (response.startsWith("ACCEPTED") || response.startsWith("REJECTED"));
     }
 
     @Override

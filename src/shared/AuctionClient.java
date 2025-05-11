@@ -8,7 +8,7 @@ public interface AuctionClient {
 
     List<String[]> getAvailableItems() throws IOException;
 
-    boolean placeBid(int itemId, int amount) throws IOException;
+    void placeBid(int itemId, int amount) throws IOException;
 
     void close() throws IOException;
 }

@@ -84,14 +84,17 @@ public class AuctionManager implements Runnable {
             }
 
             case "REJECTED" -> {
-                agent.sendGuiMessage("Bid rejected: " + (parts.length > 1 ?
-                        parts[1] : "Unknown reason"));
+                StringBuilder rejMsg = new StringBuilder("Bid rejected: ");
+                    for (int i = 1; i < parts.length; i++) {
+                        rejMsg.append(parts[i]);
+                        rejMsg.append(" ");
+                    }
+                agent.sendGuiMessage(rejMsg.toString());
             }
 
             case "OUTBID" -> {
                 String itemId = parts[1];
-                System.out.println("You were outbid on item " + itemId);
-                // TODO: Notify GUI that user has been outbid
+                agent.sendGuiMessage("You were outbid on item " + itemId);
             }
 
             case "WINNER" -> {
@@ -99,11 +102,14 @@ public class AuctionManager implements Runnable {
                 int amount = Integer.parseInt(parts[1]);
                 int toAuctionHouseId = Integer.parseInt(auctionId);
                 int fromAgentId = auctionClient.getAgentId();
+                String itemId = parts[2];
                 try {
                     bankClient.transferFunds(fromAgentId, toAuctionHouseId, amount);
                 } catch (Exception e) {
                     System.err.println("Failed to transfer funds: " + e.getMessage());
                 }
+                agent.sendGuiMessage("You won item " + itemId + " from auction " +
+                        "house" + auctionId);
                 agent.refreshBalance();
             }
             
@@ -143,11 +149,10 @@ public class AuctionManager implements Runnable {
             case "ITEM_SOLD" -> {
                 String itemId = parts[1];
                 items.removeIf(item -> item.itemId.equals(itemId));
-                System.out.println("Item " + itemId + " has been sold and removed from the list.");
-                
                 if (onItemUpdate != null) {
                     javafx.application.Platform.runLater(onItemUpdate);
                 }
+                agent.sendGuiMessage("Item " + itemId + " from auction " + auctionId + " sold!");
             }
 
             default -> {

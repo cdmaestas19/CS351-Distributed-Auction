@@ -34,6 +34,12 @@ public class AuctionHouseGUI {
 
         Scene scene = new Scene(mainLayout, 900, 600);
         primaryStage.setScene(scene);
+
+        primaryStage.setOnCloseRequest(event -> {
+            event.consume();
+            handleShutdown();
+        });
+
         primaryStage.show();
 
         updateUI();

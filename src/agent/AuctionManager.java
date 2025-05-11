@@ -4,9 +4,7 @@ import shared.BankClient;
 import shared.Message;
 import shared.SocketAuctionClient;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class AuctionManager implements Runnable {
     
@@ -17,6 +15,7 @@ public class AuctionManager implements Runnable {
     private final BankClient bankClient;
     private Runnable onItemUpdate;
     private final Agent agent;
+    private final Set<String> activeBids = Collections.synchronizedSet(new HashSet<>());
 
     public AuctionManager(String auctionId, SocketAuctionClient auctionClient,
                           BankClient bankClient, Agent agent) {
@@ -57,8 +56,7 @@ public class AuctionManager implements Runnable {
     private void parseItem(String[] item) {
         
         String itemId = item[1];
-        
-        // Reconstruct the quoted description from index 2 to length - 3
+
         StringBuilder descBuilder = new StringBuilder();
         for (int i = 2; i < item.length - 2; i++) {
             descBuilder.append(item[i]);
@@ -80,6 +78,8 @@ public class AuctionManager implements Runnable {
 
         switch (parts[0]) {
             case "ACCEPTED" -> {
+                String itemId = parts[1];
+                activeBids.add(itemId);
                 agent.sendGuiMessage("Bid accepted!");
             }
 
@@ -94,6 +94,7 @@ public class AuctionManager implements Runnable {
 
             case "OUTBID" -> {
                 String itemId = parts[1];
+                activeBids.remove(itemId);
                 agent.sendGuiMessage("You were outbid on item " + itemId);
             }
 
@@ -108,6 +109,7 @@ public class AuctionManager implements Runnable {
                 } catch (Exception e) {
                     System.err.println("Failed to transfer funds: " + e.getMessage());
                 }
+                activeBids.remove(itemId);
                 agent.sendGuiMessage("You won item " + itemId + " from auction " +
                         "house" + auctionId);
                 agent.refreshBalance();
@@ -149,6 +151,7 @@ public class AuctionManager implements Runnable {
             case "ITEM_SOLD" -> {
                 String itemId = parts[1];
                 items.removeIf(item -> item.itemId.equals(itemId));
+                activeBids.remove(itemId);
                 if (onItemUpdate != null) {
                     javafx.application.Platform.runLater(onItemUpdate);
                 }
@@ -175,6 +178,10 @@ public class AuctionManager implements Runnable {
 
     public void setOnItemUpdate(Runnable callback) {
         this.onItemUpdate = callback;
+    }
+
+    public boolean hasActiveBids() {
+        return !activeBids.isEmpty();
     }
     
 }

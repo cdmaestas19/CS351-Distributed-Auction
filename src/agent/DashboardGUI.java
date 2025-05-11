@@ -255,6 +255,21 @@ public class DashboardGUI {
 
         displayBoxR.getChildren().add(messageBox);
         displayBoxR.setAlignment(Pos.BOTTOM_CENTER);
+
+        Button shutdownButton = new Button("Exit Agent");
+        shutdownButton.setFont(displayFont);
+        shutdownButton.setStyle("-fx-border-color: red;" +
+                "-fx-border-width: 4;" +
+                "-fx-border-radius: 10;" +
+                "-fx-background-radius: 10;" +
+                "-fx-background-color: lightcoral;");
+        shutdownButton.setOnAction(e -> agent.shutdown());
+
+        VBox buttonBox = new VBox(shutdownButton);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setPadding(new Insets(10));
+
+        displayBoxR.getChildren().add(buttonBox);
     }
     
     public void displayMessage(String text) {

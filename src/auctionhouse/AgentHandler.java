@@ -141,7 +141,7 @@ public class AgentHandler implements Runnable {
                 auctionHouse.broadcastItemUpdate(item);
                 sendItemUpdate(item);
                 auctionHouse.triggerUpdate();
-                out.println(Message.encode("ACCEPTED"));
+                out.println(Message.encode("ACCEPTED", String.valueOf(itemId)));
             }
 
         } catch (NumberFormatException e) {

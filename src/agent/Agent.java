@@ -180,5 +180,37 @@ public class Agent implements Runnable {
             onMessage.accept(msg);
         }
     }
+
+    public boolean canShutdown() {
+        for (AuctionManager manager : auctionManagers) {
+            if (manager.hasActiveBids()) return false;
+        }
+        return true;
+    }
+
+    public void shutdown() {
+        if (!canShutdown()) {
+            sendGuiMessage("Cannot exit: Active bids still in progress.");
+            return;
+        }
+
+        try {
+            bankSocketClient.deregister(agentID);
+            sendGuiMessage("Deregistered from bank.");
+        } catch (Exception e) {
+            System.err.println("Error during deregistration: " + e.getMessage());
+        }
+
+        for (AuctionManager manager : auctionManagers) {
+            try {
+                manager.getClient().close();
+            } catch (IOException e) {
+                System.err.println("Error closing connection to auction house: " + e.getMessage());
+            }
+        }
+
+        System.exit(0);
+    }
+
     
 }

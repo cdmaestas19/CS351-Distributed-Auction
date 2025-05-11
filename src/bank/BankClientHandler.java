@@ -94,6 +94,7 @@ public class BankClientHandler implements Runnable {
                     case "TRANSFER_FUNDS" -> transferFunds(parts, out);
                     case "REGISTER_AGENT_CHANNEL" -> handleAgentChannel(parts, out);
                     case "BALANCE" -> handleBalance(parts, out);
+                    case "DEREGISTER" -> handleDeregister(parts, out);
                 }
             }
         } catch (IOException e) {
@@ -263,6 +264,7 @@ public class BankClientHandler implements Runnable {
      * @param out output stream
      */
     private void transferFunds(String[] parts, PrintWriter out) {
+        System.out.println("Reached transfer funds");
         if (parts.length != 4) {
             out.println("ERROR Invalid TRANSFER_FUNDS format");
             return;
@@ -286,15 +288,19 @@ public class BankClientHandler implements Runnable {
                 return;
             }
             //Remove funds from Agent blocked and total balance
+            System.out.println(from.getTotalBalance() + "before transfer");
             from.setBlockedFunds(-amount);
             from.setTotalBalance(-amount);
+            System.out.println(from.getTotalBalance() + "after transfer");
             out.println(Message.encode("BALANCE", String.valueOf(from.getTotalBalance()),
                     String.valueOf(from.getAvailableBalance())));
         }
 
         synchronized (to) {
             //Transfer to Auction House account
+            System.out.println(to.getTotalBalance() + "before transfer");
             to.setTotalBalance(amount);
+            System.out.println(to.getTotalBalance());
         }
         System.out.println("Funds transferred from: " + from.getName() + " to "
                 + to.getName());
@@ -330,5 +336,47 @@ public class BankClientHandler implements Runnable {
 
         out.println(Message.encode("BALANCE", String.valueOf(total),
                 String.valueOf(available)));
+    }
+
+    private void handleDeregister(String[] parts, PrintWriter out) {
+        if (parts.length != 2) {
+            out.println("ERROR Invalid DEREGISTER format");
+            return;
+        }
+
+        int clientID;
+        try {
+            clientID = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException e) {
+            out.println("ERROR Invalid client ID");
+            return;
+        }
+
+        Account account = accounts.get(clientID);
+        if (account == null) {
+            out.println("ERROR Account not found");
+            return;
+        }
+
+        if (account.isAgent) {
+            agentIdToWriter.remove(clientID);
+            agentWriters.removeIf(writer -> writer.equals(agentIdToWriter.get(clientID)));
+            System.out.printf("Agent %d deregistered.\n", clientID);
+        } else {
+            String hostPort = auctionHouseAddresses.remove(clientID);
+            if (hostPort != null) {
+                String[] part = hostPort.split(":");
+                String host = part[0];
+                String port = part[1];
+
+                String msg = Message.encode("REMOVE_AUCTION_HOUSE",
+                        host, port, String.valueOf(clientID));
+                for (PrintWriter writer : agentIdToWriter.values()) {
+                    writer.println(msg);
+                    writer.flush();
+                }
+            }
+            out.println("OK");
+        }
     }
 }

@@ -2,10 +2,10 @@ package agent;
 
 public class ItemInfo {
     
-    String AuctionId;
-    String itemId;
-    String description;
-    int minBid, currBid;
+    public String AuctionId;
+    public String itemId;
+    public String description;
+    public int minBid, currBid;
     
     
     public ItemInfo (String AuctionId, String itemId, String description,
@@ -22,5 +22,21 @@ public class ItemInfo {
     @Override
     public String toString() {
         return ("Item " + itemId + ": " + description);
+    }
+
+    public String getAuctionId() {
+        return AuctionId;
+    }
+
+    public String getItemId() {
+        return itemId;
+    }
+
+    public int getMinBid() {
+        return minBid;
+    }
+
+    public int getCurrBid() {
+        return currBid;
     }
 }

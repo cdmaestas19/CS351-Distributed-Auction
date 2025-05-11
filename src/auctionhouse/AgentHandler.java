@@ -109,7 +109,13 @@ public class AgentHandler implements Runnable {
                 int prevBidder = item.getCurrentBidderId();
 
                 if (bidAmount < minBid || bidAmount <= currentBid) {
+                    System.out.println("Bid rejected");
                     out.println(Message.encode("REJECTED", "Bid too low"));
+                    return;
+                }
+
+                if (agentId == prevBidder) {
+                    out.println(Message.encode("REJECTED","You already have the highest bid "));
                     return;
                 }
 
@@ -162,8 +168,8 @@ public class AgentHandler implements Runnable {
         out.println(Message.encode("OUTBID", String.valueOf(itemId)));
     }
 
-    public void sendWinnerNotification(int itemId) {
-        out.println(Message.encode("WINNER", String.valueOf(itemId)));
+    public void sendWinnerNotification(int amount) {
+        out.println(Message.encode("WINNER", String.valueOf(amount)));
     }
 
     private void close() {

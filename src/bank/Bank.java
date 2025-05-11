@@ -87,20 +87,4 @@ public class Bank {
             }
         }
     }
-
-    /**
-     * Shutdown the server
-     */
-    public void shutdown() {
-        running.set(false);
-        try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-            }
-            clientThreadPool.shutdownNow();
-            System.out.println("Bank server shut down.");
-        } catch (IOException e) {
-            System.err.println("Error shutting down bank server: " + e.getMessage());
-        }
-    }
 }

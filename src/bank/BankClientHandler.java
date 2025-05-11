@@ -224,7 +224,6 @@ public class BankClientHandler implements Runnable {
                 out.println("ERROR Insufficient funds");
             } else {
                 account.setBlockedFunds(amount);
-                System.out.println("Blocked Funds: " + account.getName());
                 out.println("OK");
                 writer.println(Message.encode("BALANCE", String.valueOf(account.getTotalBalance()),
                         String.valueOf(account.getAvailableBalance())));
@@ -249,7 +248,6 @@ public class BankClientHandler implements Runnable {
         if (account != null && account.isAgent) {
             synchronized (account) {
                 account.setBlockedFunds(-amount);
-                System.out.println("Unblocked Funds: " + amount + "from " + account.getName());
                 out.println("OK");
                 if (account.getBlockedFunds() < 0) {
                     account.setBlockedFunds(0);
@@ -264,7 +262,6 @@ public class BankClientHandler implements Runnable {
      * @param out output stream
      */
     private void transferFunds(String[] parts, PrintWriter out) {
-        System.out.println("Reached transfer funds");
         if (parts.length != 4) {
             out.println("ERROR Invalid TRANSFER_FUNDS format");
             return;
@@ -288,19 +285,15 @@ public class BankClientHandler implements Runnable {
                 return;
             }
             //Remove funds from Agent blocked and total balance
-            System.out.println(from.getTotalBalance() + "before transfer");
             from.setBlockedFunds(-amount);
             from.setTotalBalance(-amount);
-            System.out.println(from.getTotalBalance() + "after transfer");
             out.println(Message.encode("BALANCE", String.valueOf(from.getTotalBalance()),
                     String.valueOf(from.getAvailableBalance())));
         }
 
         synchronized (to) {
             //Transfer to Auction House account
-            System.out.println(to.getTotalBalance() + "before transfer");
             to.setTotalBalance(amount);
-            System.out.println(to.getTotalBalance());
         }
         System.out.println("Funds transferred from: " + from.getName() + " to "
                 + to.getName());
@@ -338,6 +331,17 @@ public class BankClientHandler implements Runnable {
                 String.valueOf(available)));
     }
 
+    /**
+     * Handle unregistering a client from the bank.
+     *
+     * A client will simply be removed from being able to have interactions
+     *
+     * Auction house will be removed from the list of open houses
+     *
+     * Agent will be removed from any active agents
+     * @param parts message parts
+     * @param out output stream
+     */
     private void handleDeregister(String[] parts, PrintWriter out) {
         if (parts.length != 2) {
             out.println("ERROR Invalid DEREGISTER format");

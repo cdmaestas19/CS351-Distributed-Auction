@@ -67,6 +67,25 @@ account as well as any messages of when you win a bid
 * To make a bid, you must click on an item to bid on then enter a bid amount in
 the field below and click the bid button to submit a bid.
 
+### Running Autobidder
+
+This program will start running a given amount of automated agents that will
+start autobidding on random items in random auction houses to allow for a more
+realistic experience.
+
+* This program takes 4 arguments from the command line for the host name, host
+port, the amount of autobidders to run and their starting balance
+* Run the Autobidder using this command `java -jar autobidder.jar <host_name> 
+<host_port> <#_autobidders> <initial_balance>`
+* If you ever wish to terminate the autobidders, you may type `q` into the
+command line and it will eventually stop all autobidders once they are done
+with any bids in progress.
+
 ## Known bugs/things to improve
 
-* There is no full implementation of auto agent bidder
+* Auto bidder will sometimes break if an auction house deregisters, but it
+doesn't break any other functionality of the entire program, it simply starts 
+throwing a bunch of exception messages
+* Would have liked to add in our Auction House GUI the ability to remove agents
+from the list of agents when one deregisters
+* Wanted to make autobidders a little more robust and realistic

@@ -1,21 +1,30 @@
 package autobid;
-
 import agent.Agent;
 import shared.BankClient;
 import shared.SocketBankClient;
-
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Auto bidder launcher
+ *
+ * Starts the auto bidders and keeps running until requested to shut down or
+ * there are no more items to bid on
+ */
+
 public class AutoBidderLauncher {
 
+    /**
+     * Auto bidders
+     */
     private static final List<AutoBidder> autobidders = new ArrayList<>();
 
     public static void main(String[] args) {
         if (args.length < 4) {
-            System.err.println("Usage: java autobid.AutoBidderLauncher <bankHost> <bankPort> <agentCount> <initialBalance>");
+            System.err.println("Usage: java autobid.AutoBidderLauncher " +
+                    "<bankHost> <bankPort> <agentCount> <initialBalance>");
             System.exit(1);
         }
 
@@ -42,7 +51,8 @@ public class AutoBidderLauncher {
                     autobidder.start();
 
                 } catch (Exception e) {
-                    System.err.println("Failed to launch autobidder " + id + ": " + e.getMessage());
+                    System.err.println("Failed to launch autobidder " +
+                            id + ": " + e.getMessage());
                 }
             }).start();
         }
@@ -51,12 +61,13 @@ public class AutoBidderLauncher {
             while (true) {
                 String input = scanner.nextLine().trim().toLowerCase();
                 if (input.equals("q")) {
-                    System.out.println("Shutdown signal received. Waiting for autobidders to finish...");
+                    System.out.println("Waiting for autobidders to finish...");
                     for (AutoBidder a : autobidders) {
                         a.requestShutdown();
                     }
 
-                    while (autobidders.stream().anyMatch(a -> !a.isTerminated())) {
+                    while (autobidders.stream().anyMatch(autoBidder ->
+                            !autoBidder.isTerminated())) {
                         Thread.sleep(1000);
                     }
 
@@ -67,7 +78,7 @@ public class AutoBidderLauncher {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Shutdown monitor error: " + e.getMessage());
+            System.err.println("Shutdown error: " + e.getMessage());
         }
     }
 }

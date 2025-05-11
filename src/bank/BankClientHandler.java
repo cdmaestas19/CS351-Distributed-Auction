@@ -365,12 +365,9 @@ public class BankClientHandler implements Runnable {
         } else {
             String hostPort = auctionHouseAddresses.remove(clientID);
             if (hostPort != null) {
-                String[] part = hostPort.split(":");
-                String host = part[0];
-                String port = part[1];
 
                 String msg = Message.encode("REMOVE_AUCTION_HOUSE",
-                        host, port, String.valueOf(clientID));
+                        String.valueOf(clientID));
                 for (PrintWriter writer : agentIdToWriter.values()) {
                     writer.println(msg);
                     writer.flush();

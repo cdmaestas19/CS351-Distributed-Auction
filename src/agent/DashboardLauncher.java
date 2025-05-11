@@ -3,6 +3,13 @@ package agent;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
+/**
+ * Launches agent dashboard
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction
+ *
+ * @author Dustin Ferguson
+ */
 public class DashboardLauncher extends Application {
     
     private static Agent agent;

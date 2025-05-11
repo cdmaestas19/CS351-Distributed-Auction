@@ -15,29 +15,49 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Agent Dashboard GUI
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction
+ *
+ * @author Dustin Ferguson
+ * @author Christian Maestas
+ * @author Isaac Tapia
+ */
 public class DashboardGUI {
-
-    private final Agent agent;
+    
     private VBox root;
     private VBox displayBoxL, displayBoxC, displayBoxR;
     private VBox messageList;
-
-    private Label totalBalanceLabel;
-    private Label availableBalanceLabel;
-
+    private final Map<String, AuctionManager> auctionMap = new HashMap<>();
     private ComboBox<String> auctionSelector;
     private TableView<ItemInfo> itemTable;
     private ItemInfo selectedItem;
-    private final Map<String, AuctionManager> auctionMap = new HashMap<>();
-
-    private final Font titleFont = Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 36);
-    private final Font headingFont = Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 26);
-    private final Font displayFont = Font.font("Arial", FontWeight.SEMI_BOLD, FontPosture.REGULAR, 18);
-
+    
+    private final Font titleFont = Font.font(
+            "Arial", FontWeight.BOLD, FontPosture.REGULAR, 36);
+    private final Font headingFont = Font.font(
+            "Arial", FontWeight.BOLD, FontPosture.REGULAR, 26);
+    private final Font displayFont = Font.font(
+            "Arial", FontWeight.SEMI_BOLD, FontPosture.REGULAR, 18);
+    
+    private final Agent agent;
+    private Label totalBalanceLabel;
+    private Label availableBalanceLabel;
+    
+    
+    /**
+     * Agent dashboard constructor
+     * @param agent the agent that the dashboard
+     */
     public DashboardGUI(Agent agent) {
         this.agent = agent;
     }
-
+    
+    /**
+     * Sets stage for JavaFX GUI
+     * @param primaryStage stage for JavaFX GUI
+     */
     public void show(Stage primaryStage) {
         primaryStage.setTitle("Agent Dashboard");
 
@@ -55,9 +75,12 @@ public class DashboardGUI {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
+    
+    /**
+     * Sets up top of display, where title is
+     */
     private void setupTitleBox() {
-        String titleString = "Agent Name: " + agent.getAgentName() + "      (Agent ID: " + agent.getAgentID() + ")";
+        String titleString = ("Agent Name: " + agent.getAgentName());
         Label titleLabel = new Label(titleString);
         titleLabel.setFont(titleFont);
         titleLabel.setAlignment(Pos.CENTER);
@@ -67,7 +90,10 @@ public class DashboardGUI {
         titleBox.getChildren().add(titleLabel);
         root.getChildren().add(titleBox);
     }
-
+    
+    /**
+     * Sets up 3 main display areas
+     */
     private void setupDisplayBoxes() {
         displayBoxL = new VBox(10);
         displayBoxC = new VBox(10);
@@ -87,7 +113,10 @@ public class DashboardGUI {
         displayBox.getChildren().addAll(displayBoxL, displayBoxC, displayBoxR);
         root.getChildren().add(displayBox);
     }
-
+    
+    /**
+     * Sets up account info area
+     */
     private void setupAccountBox() {
         Label accountHeading = new Label("Account Info");
         accountHeading.setFont(headingFont);
@@ -118,14 +147,10 @@ public class DashboardGUI {
 
         displayBoxL.getChildren().add(accountBox);
     }
-
-    public void updateBalanceLabels() {
-        int total = agent.getTotalBalance();
-        int available = agent.getAvailableBalance();
-        totalBalanceLabel.setText("Total Balance: $" + total);
-        availableBalanceLabel.setText("Available Balance: $" + available);
-    }
-
+    
+    /**
+     * Sets up the auctioning area in GUI
+     */
     private void setupAuctionBox() {
         // Heading
         Label auctionHeading = new Label("Auction House Items");
@@ -153,24 +178,26 @@ public class DashboardGUI {
         itemTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<ItemInfo, String> idCol = new TableColumn<>("ID");
-        idCol.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().itemId));
+        idCol.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(cell.getValue().itemId));
 
         TableColumn<ItemInfo, String> descCol = new TableColumn<>("Description");
-        descCol.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().description));
+        descCol.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(cell.getValue().description));
 
         TableColumn<ItemInfo, String> minBidCol = new TableColumn<>("Min Bid");
-        minBidCol.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(String.valueOf(cell.getValue().minBid)));
+        minBidCol.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(String.valueOf(cell.getValue().minBid)));
 
         TableColumn<ItemInfo, String> currBidCol = new TableColumn<>("Current Bid");
-        currBidCol.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(String.valueOf(cell.getValue().currBid)));
+        currBidCol.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(String.valueOf(cell.getValue().currBid)));
 
         itemTable.getColumns().addAll(idCol, descCol, minBidCol, currBidCol);
 
-        itemTable.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
+        itemTable.getSelectionModel().selectedItemProperty().addListener((
+                obs, oldItem, newItem) -> {
             selectedItem = newItem;
-            if (newItem != null) {
-                System.out.println("Selected item: " + newItem.itemId);
-            }
         });
 
         // Bid area
@@ -209,7 +236,6 @@ public class DashboardGUI {
                 }
 
                 manager.getClient().placeBid(Integer.parseInt(selectedItem.itemId), bid);
-                System.out.printf("Sent bid $%d for item %s to %s\n", bid, selectedItem.itemId, auctionId);
                 bidField.clear();
 
             } catch (NumberFormatException ex) {
@@ -231,7 +257,10 @@ public class DashboardGUI {
         displayBoxC.setPadding(new Insets(10));
         displayBoxC.getChildren().addAll(headingBox, selectorBox, itemTable, bidBox);
     }
-
+    
+    /**
+     * Sets up the message display on agent GUI.
+     */
     private void setupMessageBox() {
         Label messageHeading = new Label("Messages");
         messageHeading.setFont(headingFont);
@@ -272,6 +301,10 @@ public class DashboardGUI {
         displayBoxR.getChildren().add(buttonBox);
     }
     
+    /**
+     * Shows a message in the message pane of the GUI
+     * @param text The message to be displayed on the GUI
+     */
     public void displayMessage(String text) {
         Platform.runLater(() -> {
             Label msg = new Label(text);
@@ -279,16 +312,33 @@ public class DashboardGUI {
             messageList.getChildren().add(msg);
         });
     }
-
     
+    /**
+     * Refreshes the "Total Balance" and "Available Balance" labels in account
+     * info area
+     */
+    public void updateBalanceLabels() {
+        int total = agent.getTotalBalance();
+        int available = agent.getAvailableBalance();
+        totalBalanceLabel.setText("Total Balance: $" + total);
+        availableBalanceLabel.setText("Available Balance: $" + available);
+    }
+    
+    /**
+     * Adds an auction house to the GUI
+     * @param manager The manager that belongs to the auction house to be shown.
+     */
     public void addAuctionHouse(AuctionManager manager) {
         String id = manager.getAuctionId();
-        System.out.println("Adding auction house: " + id);
         auctionMap.put(id, manager);
         auctionSelector.getItems().add(id);
         auctionSelector.getSelectionModel().selectFirst();
     }
-
+    
+    /**
+     * Removes an auction house that is no longer active.
+     * @param auctionId The ID number of the auction house to be removed from the GUI
+     */
     public void removeAuctionHouse(String auctionId) {
         Platform.runLater(() -> {
             auctionMap.remove(auctionId);
@@ -302,11 +352,20 @@ public class DashboardGUI {
             displayMessage("Auction house " + auctionId + " removed from system.");
         });
     }
-
+    
+    /**
+     * Updates the list of items that are available for auction for an auction house
+     * @param manager The auction house manager that the items belong to.
+     */
     private void updateItemTable(AuctionManager manager) {
         itemTable.getItems().setAll(manager.getItems());
     }
-
+    
+    /**
+     * Forces the item table to re-render if the supplied auction house is
+     * currently selected.
+     * @param auctionId
+     */
     public void refreshAuctionTable(String auctionId) {
         AuctionManager manager = auctionMap.get(auctionId);
         if (manager != null && auctionSelector.getValue() != null &&

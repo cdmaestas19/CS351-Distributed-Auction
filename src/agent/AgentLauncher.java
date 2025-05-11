@@ -5,9 +5,15 @@ import shared.SocketBankClient;
 import java.net.Socket;
 import java.util.Scanner;
 
+/**
+ * Launches the agent and it's dashboard GUI
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction
+ *
+ * @author Dustin Ferguson
+ */
 public class AgentLauncher {
-
-
+    
     public static void main(String[] args) {
 
         if (args.length != 2) {

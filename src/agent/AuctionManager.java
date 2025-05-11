@@ -6,6 +6,15 @@ import shared.SocketAuctionClient;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Handles communication between an agent and
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction
+ *
+ * @author Dustin Ferguson
+ * @author Christian Maestas
+ * @author Isaac Tapia
+ */
 public class AuctionManager implements Runnable {
     
     private String auctionId;
@@ -16,7 +25,15 @@ public class AuctionManager implements Runnable {
     private Runnable onItemUpdate;
     private final Agent agent;
     private final Set<String> activeBids = Collections.synchronizedSet(new HashSet<>());
-
+    
+    /**
+     * Auction manager constructor.
+     * @param auctionId ID number of auction house
+     * @param auctionClient Client that handles communication between an agent and
+     *                     an auction house
+     * @param bankClient Client that handles communication between agent and bank.
+     * @param agent The agent that the auction manager belongs to.
+     */
     public AuctionManager(String auctionId, SocketAuctionClient auctionClient,
                           BankClient bankClient, Agent agent) {
         this.auctionId = auctionId;
@@ -26,6 +43,10 @@ public class AuctionManager implements Runnable {
         this.agent = agent;
     }
     
+    /**
+     * Displays initial items available in GUI and actively listens for changes
+     * and messages from auction house.
+     */
     @Override
     public void run() {
         try {
@@ -46,6 +67,11 @@ public class AuctionManager implements Runnable {
         }
     }
     
+    /**
+     * Parses list of items sent from auction house.
+     * @param itemList List of encoded strings representing available items for
+     *                 sale from the auction house.
+     */
     private void parseItemsList(List<String[]> itemList) {
         
         for (String[] item : itemList) {
@@ -53,6 +79,10 @@ public class AuctionManager implements Runnable {
         }
     }
     
+    /**
+     * Parses a single item from a string message sent from auction house.
+     * @param item a single item from a string message sent from auction house.
+     */
     private void parseItem(String[] item) {
         
         String itemId = item[1];
@@ -71,9 +101,13 @@ public class AuctionManager implements Runnable {
         ItemInfo itemInfo = new ItemInfo(auctionId, itemId, description, minBid, currBid);
         items.add(itemInfo);
     }
-
+    
+    /**
+     * Handles encoded string messages sent from the auction house.
+     * @param message An encoded string message sent from the auction house
+     * @throws IOException
+     */
     public void handleMessage(String message) throws IOException {
-        System.out.println("AuctionManager received: " + message);
         String[] parts = Message.decode(message);
 
         switch (parts[0]) {
@@ -99,7 +133,6 @@ public class AuctionManager implements Runnable {
             }
 
             case "WINNER" -> {
-                System.out.println("winner case");
                 int amount = Integer.parseInt(parts[1]);
                 int toAuctionHouseId = Integer.parseInt(auctionId);
                 int fromAgentId = auctionClient.getAgentId();
@@ -163,23 +196,39 @@ public class AuctionManager implements Runnable {
             }
         }
     }
-
+    
+    /**
+     * @return The auction house's ID number
+     */
     public String getAuctionId() {
         return auctionId;
     }
-
+    
+    /**
+     * @return the list of items available at the auction house
+     */
     public List<ItemInfo> getItems() {
         return items;
     }
-
+    
+    /**
+     * @return the client that handles communication between this auction house
+     * and agent.
+     */
     public SocketAuctionClient getClient() {
         return auctionClient;
     }
-
+    
+    /**
+     * Supply a callback that fires every time items change.
+     */
     public void setOnItemUpdate(Runnable callback) {
         this.onItemUpdate = callback;
     }
-
+    
+    /**
+     * @return True if the agent has active bids at this auction house
+     */
     public boolean hasActiveBids() {
         return !activeBids.isEmpty();
     }

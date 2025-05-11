@@ -89,6 +89,28 @@ public class Agent implements Runnable {
                 }
                 break;
             }
+            case "REMOVE_AUCTION_HOUSE": {
+                String removedId = parts[1];
+                AuctionManager toRemove = null;
+
+                for (AuctionManager manager : auctionManagers) {
+                    if (manager.getAuctionId().equals(removedId)) {
+                        toRemove = manager;
+                        break;
+                    }
+                }
+
+                if (toRemove != null) {
+                    try {
+                        toRemove.getClient().close();
+                        sendGuiMessage("Auction house " + removedId + " has been removed.");
+                    } catch (IOException e) {
+                        System.err.println("Failed to close auction client for removed house: " + e.getMessage());
+                    }
+                    auctionManagers.remove(toRemove);
+                }
+                break;
+            }
             default:
                 System.out.println("Agent.handleMessage() error!");
                 System.out.println(message);

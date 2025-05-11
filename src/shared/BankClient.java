@@ -29,7 +29,13 @@ public interface BankClient {
      */
     int registerAgent(String name, int initialBalance);
 
-    void deregister(int auctionHouseId);
+    /**
+     * Sends a deregistration request to the bank for the given account ID.
+     * Used when the agent or auction house is shutting down.
+     *
+     * @param id the account ID to deregister
+     */
+    void deregister(int id);
 
     /**
      * Requests the bank to block a certain amount of funds from an agent's account.

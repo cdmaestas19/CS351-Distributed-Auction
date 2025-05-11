@@ -69,6 +69,12 @@ public class SocketBankClient implements BankClient {
         }
     }
 
+    /**
+     * Sends a deregistration request to the bank for the given account ID.
+     * Used when the agent or auction house is shutting down.
+     *
+     * @param id the account ID to deregister
+     */
     @Override
     public void deregister(int id) {
         String msg = (Message.encode("DEREGISTER", String.valueOf(id)));
@@ -114,7 +120,7 @@ public class SocketBankClient implements BankClient {
                 String.valueOf(toAuctionHouseId), String.valueOf(amount));
         sendMessage(msg);
     }
-    
+
     /**
      * Sends a single-line message to the bank and returns the response.
      * Opens a socket to the bank host/port, sends the message, and reads one reply.

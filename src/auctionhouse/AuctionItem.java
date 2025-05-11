@@ -13,7 +13,6 @@ public class AuctionItem {
     private final int itemId;
     private final String description;
     private final int minimumBid;
-
     private int currentBid;
     private int currentBidderId;
     private boolean sold;
@@ -79,6 +78,9 @@ public class AuctionItem {
         return sold;
     }
 
+    /**
+     * @return true if the item is currently active in an auction; false otherwise
+     */
     public boolean isActive() {
         return active;
     }
@@ -105,6 +107,11 @@ public class AuctionItem {
         this.sold = true;
     }
 
+    /**
+     * Sets whether the item is currently active in an auction.
+     *
+     * @param active true if the item is active; false otherwise
+     */
     public void setActive(boolean active) {
         this.active = active;
     }

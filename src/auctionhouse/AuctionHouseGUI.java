@@ -7,11 +7,21 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.util.List;
 
+/**
+ * GUI for visualizing the state of the Auction House.
+ * Displays items for sale, connected agents, and supports controlled shutdown.
+ * <p>
+ * Part of CS 351 Project 5 – Distributed Auction.
+ *
+ * @author Isaac Tapia
+ */
 public class AuctionHouseGUI {
 
     private final AuctionHouse house;
@@ -19,10 +29,20 @@ public class AuctionHouseGUI {
     private TableView<AuctionItem> itemTable;
     private VBox agentListPane;
 
+    /**
+     * Constructs a GUI bound to the given AuctionHouse instance.
+     *
+     * @param house the auction house to display
+     */
     public AuctionHouseGUI(AuctionHouse house) {
         this.house = house;
     }
 
+    /**
+     * Initializes and shows the window with layout and event bindings.
+     *
+     * @param primaryStage the main stage
+     */
     public void show(Stage primaryStage) {
         primaryStage.setTitle("AuctionHouse");
 
@@ -35,6 +55,7 @@ public class AuctionHouseGUI {
         Scene scene = new Scene(mainLayout, 900, 600);
         primaryStage.setScene(scene);
 
+        // Prevent exit if active auctions exist
         primaryStage.setOnCloseRequest(event -> {
             event.consume();
             handleShutdown();
@@ -45,6 +66,9 @@ public class AuctionHouseGUI {
         updateUI();
     }
 
+    /**
+     * Creates the top header displaying auction house ID and port.
+     */
     private HBox createHeader() {
         headerLabel = new Label("AuctionHouse ID: <loading> | Port: " + house.getPort());
         headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
@@ -55,6 +79,9 @@ public class AuctionHouseGUI {
         return headerBox;
     }
 
+    /**
+     * Constructs the item table view showing ID, description, bids, and status.
+     */
     private TableView<AuctionItem> createItemTable() {
         itemTable = new TableView<>();
         itemTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -73,6 +100,7 @@ public class AuctionHouseGUI {
 
         TableColumn<AuctionItem, String> statusCol = new TableColumn<>("Status");
 
+        // Dynamically bind status label based on item state
         statusCol.setCellValueFactory(cellData -> {
             AuctionItem item = cellData.getValue();
             return Bindings.createStringBinding(() -> {
@@ -86,6 +114,9 @@ public class AuctionHouseGUI {
         return itemTable;
     }
 
+    /**
+     * Builds the side pane listing connected agents.
+     */
     private ScrollPane createAgentPane() {
         agentListPane = new VBox(5);
         agentListPane.setPadding(new Insets(10));
@@ -101,6 +132,9 @@ public class AuctionHouseGUI {
         return scrollPane;
     }
 
+    /**
+     * Creates the shutdown button and attaches its event handler.
+     */
     private HBox createShutdownBox() {
         Button shutdownButton = new Button("Shutdown");
         shutdownButton.setOnAction(e -> handleShutdown());
@@ -111,6 +145,10 @@ public class AuctionHouseGUI {
         return box;
     }
 
+    /**
+     * Attempts to shut down the auction house if no active auctions exist.
+     * Displays a warning if shutdown is blocked.
+     */
     private void handleShutdown() {
         if (house.hasActiveAuctions()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -124,12 +162,17 @@ public class AuctionHouseGUI {
         }
     }
 
+    /**
+     * Refreshes the entire GUI: header, item table, and agent list.
+     */
     public void updateUI() {
         Platform.runLater(() -> {
             headerLabel.setText("ID: " + house.getAccountId() + " | Port: " + house.getPort());
             itemTable.getItems().setAll(house.getItemManager().getAllItems());
 
-            agentListPane.getChildren().removeIf(n -> n instanceof Label && ((Label) n).getText().startsWith("Agent"));
+            agentListPane.getChildren().removeIf(n -> n instanceof Label &&
+                    ((Label) n).getText().startsWith("Agent"));
+
             for (Integer id : house.getAgentIds()) {
                 agentListPane.getChildren().add(new Label("Agent " + id));
             }

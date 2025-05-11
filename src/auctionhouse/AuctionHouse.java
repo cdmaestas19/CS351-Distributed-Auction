@@ -97,7 +97,6 @@ public class AuctionHouse {
      */
     public void shutdown() {
         if (hasActiveAuctions()) {
-            System.out.println("Shutdown aborted: Active auctions still in progress.");
             return;
         }
 
@@ -105,7 +104,6 @@ public class AuctionHouse {
 
         try {
             bankClient.deregister(accountId);
-            System.out.println("Deregistered auction house from bank.");
         } catch (Exception e) {
             System.err.println("Failed to deregister auction house: " + e.getMessage());
         }
@@ -119,7 +117,6 @@ public class AuctionHouse {
         }
 
         agentThreadPool.shutdownNow();
-        System.out.println("AuctionHouse shutdown complete.");
     }
 
     /**
@@ -190,6 +187,12 @@ public class AuctionHouse {
         return itemManager.hasActiveAuctions();
     }
 
+    /**
+     * Broadcasts the updated state of an item to all connected agents.
+     * Each update is sent on a separate thread to avoid blocking.
+     *
+     * @param item the item whose update should be broadcast
+     */
     public void broadcastItemUpdate(AuctionItem item) {
         for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
             AgentHandler handler = entry.getValue();
@@ -197,11 +200,19 @@ public class AuctionHouse {
                 try {
                     handler.sendItemUpdate(item);
                 } catch (Exception e) {
-                    System.err.println("Failed to send item update to Agent " + entry.getKey() + ": " + e.getMessage());
+                    System.err.println("Failed to send item update to Agent " +
+                            entry.getKey() + ": " + e.getMessage());
                 }
             }).start();
         }
     }
+
+    /**
+     * Notifies all connected agents that a specific item has been sold.
+     * Each notification is sent on a separate thread to avoid blocking.
+     *
+     * @param itemId the ID of the item that was sold
+     */
     public void broadcastItemSold(int itemId) {
         for (Map.Entry<Integer, AgentHandler> entry : agentHandlers.entrySet()) {
             AgentHandler handler = entry.getValue();
@@ -209,15 +220,26 @@ public class AuctionHouse {
                 try {
                     handler.sendItemSoldNotification(itemId);
                 } catch (Exception e) {
-                    System.err.println("Failed to send ITEM_SOLD to Agent " + entry.getKey() + ": " + e.getMessage());
+                    System.err.println("Failed to send ITEM_SOLD to Agent " +
+                            entry.getKey() + ": " + e.getMessage());
                 }
             }).start();
         }
     }
 
+    /**
+     * Attempts to determine the external IP address of the machine running this auction house.
+     * Filters out loopback, virtual, and link-local addresses.
+     *
+     * @return a usable external IPv4 address
+     * @throws IOException if no valid address is found
+     */
     private String getExternalIpAddress() throws IOException {
-        for (NetworkInterface netInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            if (netInterface.isLoopback() || !netInterface.isUp() || netInterface.isVirtual()) continue;
+        for (NetworkInterface netInterface :
+                Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (netInterface.isLoopback() || !netInterface.isUp() ||
+                    netInterface.isVirtual())
+                continue;
 
             for (InetAddress address : Collections.list(netInterface.getInetAddresses())) {
                 if (address instanceof Inet4Address
@@ -226,7 +248,8 @@ public class AuctionHouse {
 
                     String ip = address.getHostAddress();
 
-                    if (ip.startsWith("172.") || ip.startsWith("169.")) continue;
+                    if (ip.startsWith("172.") || ip.startsWith("169."))
+                        continue;
 
                     return ip;
                 }
@@ -235,10 +258,19 @@ public class AuctionHouse {
         throw new IOException("No suitable external IP address found.");
     }
 
+    /**
+     * Registers a UI update callback to be run whenever auction state changes.
+     *
+     * @param callback the update routine to run
+     */
     public void setOnUpdate(Runnable callback) {
         this.onUpdateCallback = callback;
     }
 
+    /**
+     * Triggers the registered UI update callback, if one is set.
+     * Used to notify the GUI of state changes.
+     */
     public void triggerUpdate() {
         if (onUpdateCallback != null) {
             onUpdateCallback.run();

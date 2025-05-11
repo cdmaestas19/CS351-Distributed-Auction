@@ -20,6 +20,7 @@ public class Agent implements Runnable {
     private List<AuctionManager> auctionManagers = new ArrayList<>();
     private Runnable onBalanceUpdate;
     private Consumer<AuctionManager> onAuctionConnected;
+    private Consumer<String> onMessage;
 
     
     public Agent(Socket bankSocket, String agentName, int agentID,
@@ -140,7 +141,14 @@ public class Agent implements Runnable {
             System.err.println("Failed to refresh balance: " + e.getMessage());
         }
     }
+    public void setOnMessage(Consumer<String> callback) {
+        this.onMessage = callback;
+    }
     
-    
+    public void sendGuiMessage(String msg) {
+        if (onMessage != null) {
+            onMessage.accept(msg);
+        }
+    }
     
 }

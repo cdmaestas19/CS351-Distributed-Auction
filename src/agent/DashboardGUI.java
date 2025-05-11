@@ -1,5 +1,6 @@
 package agent;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,8 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import shared.SocketAuctionClient;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +20,7 @@ public class DashboardGUI {
     private final Agent agent;
     private VBox root;
     private VBox displayBoxL, displayBoxC, displayBoxR;
+    private VBox messageList;
 
     private Label totalBalanceLabel;
     private Label availableBalanceLabel;
@@ -29,7 +29,6 @@ public class DashboardGUI {
     private TableView<ItemInfo> itemTable;
     private ItemInfo selectedItem;
     private final Map<String, AuctionManager> auctionMap = new HashMap<>();
-
 
     private final Font titleFont = Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 36);
     private final Font headingFont = Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 26);
@@ -242,27 +241,31 @@ public class DashboardGUI {
         headingBox.setAlignment(Pos.CENTER);
         headingBox.setPadding(new Insets(5));
 
-        VBox messageList = new VBox(5);
-        messageList.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        messageList = new VBox(5);
 
         ScrollPane messageScrollPane = new ScrollPane(messageList);
         messageScrollPane.setPrefSize(300, 200);
         messageScrollPane.setFitToWidth(true);
         messageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         messageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        messageScrollPane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         messageList.prefWidthProperty().bind(messageScrollPane.widthProperty());
 
         VBox messageBox = new VBox(10, headingBox, messageScrollPane);
         messageBox.setPadding(new Insets(10));
-        messageBox.setBorder(new Border(new BorderStroke(
-                Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(15), new BorderWidths(2)
-        )));
 
         displayBoxR.getChildren().add(messageBox);
         displayBoxR.setAlignment(Pos.BOTTOM_CENTER);
     }
+    
+    public void displayMessage(String text) {
+        Platform.runLater(() -> {
+            Label msg = new Label(text);
+            msg.setFont(displayFont);
+            messageList.getChildren().add(msg);
+        });
+    }
 
+    
     public void addAuctionHouse(AuctionManager manager) {
         String id = manager.getAuctionId();
         System.out.println("Adding auction house: " + id);

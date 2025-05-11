@@ -80,13 +80,12 @@ public class AuctionManager implements Runnable {
 
         switch (parts[0]) {
             case "ACCEPTED" -> {
-                String acceptMessage = new String("Bid accepted.");
-//                dashboardGUI.displayMessage(acceptMessage);
+                agent.sendGuiMessage("Bid accepted!");
             }
 
             case "REJECTED" -> {
-                System.out.println("Bid rejected: " + (parts.length > 1 ? parts[1] : "Unknown reason"));
-                // TODO: GUI callback to show rejection reason
+                agent.sendGuiMessage("Bid rejected: " + (parts.length > 1 ?
+                        parts[1] : "Unknown reason"));
             }
 
             case "OUTBID" -> {

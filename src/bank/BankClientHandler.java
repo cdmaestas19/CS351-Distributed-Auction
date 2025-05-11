@@ -361,6 +361,7 @@ public class BankClientHandler implements Runnable {
         if (account.isAgent) {
             agentIdToWriter.remove(clientID);
             agentWriters.removeIf(writer -> writer.equals(agentIdToWriter.get(clientID)));
+            out.println("OK");
             System.out.printf("Agent %d deregistered.\n", clientID);
         } else {
             String hostPort = auctionHouseAddresses.remove(clientID);

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Scanner;
 
 public class AutoBidderLauncher {
+
     private static final List<AutoBidder> autobidders = new ArrayList<>();
-    private static volatile boolean shutdownRequested = false;
 
     public static void main(String[] args) {
         if (args.length < 4) {
@@ -37,7 +37,7 @@ public class AutoBidderLauncher {
                     Thread agentThread = new Thread(agent);
                     agentThread.start();
 
-                    AutoBidder autobidder = new AutoBidder(agent, bankClient);
+                    AutoBidder autobidder = new AutoBidder(agent);
                     autobidders.add(autobidder);
                     autobidder.start();
 
@@ -47,35 +47,27 @@ public class AutoBidderLauncher {
             }).start();
         }
 
-        // Enhanced terminal listener with shutdown monitoring
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
-                System.out.println("Type 'q' to request shutdown. Type 'status' to see active agents.");
                 String input = scanner.nextLine().trim().toLowerCase();
-
                 if (input.equals("q")) {
-                    if (!shutdownRequested) {
-                        shutdownRequested = true;
-                        System.out.println("Shutdown requested. Signaling autobidders...");
-                        autobidders.forEach(AutoBidder::requestShutdown);
-                    } else {
-                        System.out.println("Shutdown already requested. Waiting for agents to finish...");
+                    System.out.println("Shutdown signal received. Waiting for autobidders to finish...");
+                    for (AutoBidder a : autobidders) {
+                        a.requestShutdown();
                     }
-                } else if (input.equals("status")) {
-                    int remaining = (int) autobidders.stream().filter(a -> !a.isTerminated()).count();
-                    System.out.printf("Still %d autobidders resolving their bids...\n", remaining);
-                }
 
-                // Exit once all agents terminate
-                if (shutdownRequested && autobidders.stream().allMatch(AutoBidder::isTerminated)) {
-                    System.out.println("All autobidders shut down. Exiting.");
-                    break;
-                }
+                    while (autobidders.stream().anyMatch(a -> !a.isTerminated())) {
+                        Thread.sleep(1000);
+                    }
 
-                Thread.sleep(2000);
+                    System.out.println("All autobidders have shut down. Exiting.");
+                    System.exit(0);
+                } else {
+                    System.out.println("Type 'q' to quit.");
+                }
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            System.err.println("Shutdown monitor error: " + e.getMessage());
         }
     }
 }

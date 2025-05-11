@@ -77,7 +77,8 @@ public class Agent implements Runnable {
                 auctionClient.connect(parts[1], Integer.parseInt(parts[2]), agentID);
                 System.out.println("Connection to Auction House " + parts[3] + " successful!");
 
-                AuctionManager auctionManager = new AuctionManager(parts[3], auctionClient, bankSocketClient);
+                AuctionManager auctionManager = new AuctionManager(parts[3],
+                        auctionClient, bankSocketClient, this);
                 Thread thread = new Thread(auctionManager);
                 thread.start();
                 auctionManagers.add(auctionManager);
@@ -131,7 +132,14 @@ public class Agent implements Runnable {
         bankOut.println(Message.encode("BALANCE", Integer.toString(agentID)));
     }
     
-    
+    public void refreshBalance() {
+        try {
+            PrintWriter bankOut = new PrintWriter(bankSocket.getOutputStream(), true);
+            bankOut.println(Message.encode("BALANCE", String.valueOf(agentID)));
+        } catch (Exception e) {
+            System.err.println("Failed to refresh balance: " + e.getMessage());
+        }
+    }
     
     
     

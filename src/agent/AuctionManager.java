@@ -16,12 +16,15 @@ public class AuctionManager implements Runnable {
     private final List<ItemInfo> items;
     private final BankClient bankClient;
     private Runnable onItemUpdate;
+    private final Agent agent;
 
-    public AuctionManager(String auctionId, SocketAuctionClient auctionClient, BankClient bankClient) {
+    public AuctionManager(String auctionId, SocketAuctionClient auctionClient,
+                          BankClient bankClient, Agent agent) {
         this.auctionId = auctionId;
         this.auctionClient = auctionClient;
         this.bankClient = bankClient;
         this.items = Collections.synchronizedList(new ArrayList<>());
+        this.agent = agent;
     }
     
     @Override
@@ -93,24 +96,16 @@ public class AuctionManager implements Runnable {
             }
 
             case "WINNER" -> {
-                String itemId = parts[1];
-                for (ItemInfo item : items) {
-                    if (item.itemId.equals(itemId)) {
-                        try {
-                            int fromAgentId = auctionClient.getAgentId();
-                            int toAuctionHouseId = Integer.parseInt(auctionId);
-                            int amount = item.currBid;
-                            
-                            bankClient.transferFunds(fromAgentId, toAuctionHouseId, amount);
-                            System.out.printf("Transferred $%d from agent %d to auction house %d for item %s\n",
-                                    amount, fromAgentId, toAuctionHouseId, itemId);
-
-                        } catch (Exception e) {
-                            System.err.println("Failed to transfer funds: " + e.getMessage());
-                        }
-                        break;
-                    }
+                System.out.println("winner case");
+                int amount = Integer.parseInt(parts[1]);
+                int toAuctionHouseId = Integer.parseInt(auctionId);
+                int fromAgentId = auctionClient.getAgentId();
+                try {
+                    bankClient.transferFunds(fromAgentId, toAuctionHouseId, amount);
+                } catch (Exception e) {
+                    System.err.println("Failed to transfer funds: " + e.getMessage());
                 }
+                agent.refreshBalance();
             }
             
             case "ITEM_UPDATED" -> {

@@ -21,6 +21,7 @@ import java.util.List;
  * Part of CS 351 Project 5 – Distributed Auction.
  *
  * @author Isaac Tapia
+ * @author Christian Maestas
  */
 public class AuctionHouseGUI {
 

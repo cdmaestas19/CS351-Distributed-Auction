@@ -1,4 +1,4 @@
-# Distributed Auction
+# Distributed Auction 
 
 Simulated auction system across a network
 
